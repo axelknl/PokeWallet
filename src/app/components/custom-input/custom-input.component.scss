@@ -1,0 +1,145 @@
+// Variables
+$input-border-radius: 8px;
+$input-border-width: 1px;
+$input-padding: 13px 16px;
+$input-font-size: 16px;
+$input-line-height: 24px;
+$input-height: 50px;
+
+$color-primary: var(--ion-color-primary);
+$color-danger: var(--ion-color-danger);
+$color-medium: var(--ion-color-medium);
+$color-light: var(--ion-color-light);
+$color-dark: var(--ion-color-dark);
+$color-white: #ffffff;
+$color-placeholder: #9da3b0;
+$color-label: var(--ion-color-primary);
+
+// Style du conteneur
+.custom-input-container {
+  width: 100%;
+  margin-bottom: 16px;
+}
+
+// Style du label
+.input-label {
+  display: block;
+  margin-bottom: 8px;
+  color: $color-label;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+// Style du wrapper de l'input
+.input-wrapper {
+  position: relative;
+  width: 100%;
+  background-color: var(--ion-color-input-background);
+  border-radius: $input-border-radius;
+  border: $input-border-width solid $color-light;
+  transition: all 0.2s ease-in-out;
+
+  // État par défaut (tel que montré dans l'image)
+  &:not(.active):not(.filled):not(.has-error) {
+    border-color: $color-light;
+    background-color: var(--ion-color-input-background);
+  }
+
+  // État actif (focus)
+  &.active {
+    border-color: $color-primary;
+    border-width: 2px;
+    box-shadow: 0 0 0 2px rgba($color-primary, 0.1);
+  }
+
+  // État rempli
+  &.filled:not(.active) {
+    border-color: $color-light;
+  }
+
+  // État d'erreur
+  &.has-error {
+    border-color: $color-danger;
+    box-shadow: 0 0 0 2px rgba($color-danger, 0.1);
+  }
+
+  // État désactivé
+  &.disabled {
+    opacity: 0.6;
+    cursor: not-allowed;
+  }
+
+  // État en lecture seule
+  &.readonly {
+    background-color: $color-light;
+    cursor: default;
+  }
+}
+
+// Style de l'input
+.custom-input {
+  width: 100%;
+  height: $input-height;
+  border-radius: $input-border-radius;
+  padding: $input-padding;
+  font-size: $input-font-size;
+  line-height: $input-line-height;
+  color: $color-dark;
+  background: transparent;
+  border: none;
+  outline: none;
+  appearance: none;
+
+  &::placeholder {
+    color: $color-placeholder;
+    opacity: 1;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+  }
+
+  &:read-only {
+    cursor: default;
+  }
+}
+
+// Style du bouton de nettoyage
+.clear-button {
+  position: absolute;
+  top: 50%;
+  right: 12px;
+  transform: translateY(-50%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: $color-medium;
+  padding: 0;
+
+  &:hover, &:focus {
+    color: $color-dark;
+  }
+
+  ion-icon {
+    font-size: 18px;
+  }
+}
+
+// Style du message d'erreur
+.error-message {
+  display: flex;
+  align-items: center;
+  margin-top: 6px;
+  font-size: 12px;
+  color: $color-danger;
+
+  ion-icon {
+    margin-right: 4px;
+    font-size: 16px;
+  }
+}

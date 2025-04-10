@@ -1,0 +1,39 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Workflow de Développement pour PokeWallet
+
+Cette règle fournit des conseils pour le développement et le déploiement de PokeWallet.
+
+## Scripts de Développement
+
+Les commandes principales sont définies dans [package.json](mdc:package.json) :
+
+- `npm start` ou `npm run start` - Lance le serveur de développement
+- `npm run build` - Compile l'application pour la production
+- `npm run test` - Exécute les tests unitaires
+- `npm run lint` - Vérifie la qualité du code avec ESLint
+
+## Technologies Principales
+
+- Angular 19
+- Ionic 8
+- Firebase pour l'authentification et le stockage de données
+- Capacitor pour le déploiement mobile
+
+## Configuration
+
+- [angular.json](mdc:angular.json) - Configuration du projet Angular
+- [ionic.config.json](mdc:ionic.config.json) - Configuration du projet Ionic
+- [capacitor.config.ts](mdc:capacitor.config.ts) - Configuration pour les applications mobiles
+- [src/environments/](mdc:src/environments) - Variables d'environnement
+
+## Bonnes Pratiques
+
+1. Utiliser les interfaces pour typer les données
+2. Séparer la logique métier dans les services
+3. Utiliser les composants réutilisables pour l'interface
+4. Suivre la structure de routage établie pour ajouter de nouvelles pages
+

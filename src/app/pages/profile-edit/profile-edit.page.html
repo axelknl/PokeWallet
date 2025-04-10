@@ -1,0 +1,37 @@
+<app-header 
+  [title]="'Modifier mon profil'" 
+  [showBackButton]="true" 
+  [defaultHref]="'/settings'"
+  [showThemeToggle]="false">
+</app-header>
+
+<ion-content [fullscreen]="true">
+  <ion-list>
+    <ion-item>
+      <ion-label position="stacked">Nom d'utilisateur</ion-label>
+      <ion-input [(ngModel)]="username" placeholder="Votre nom d'utilisateur"></ion-input>
+    </ion-item>
+    
+    <ion-item>
+      <ion-label position="stacked">Email</ion-label>
+      <ion-input [(ngModel)]="email" type="email" placeholder="Votre email" [disabled]="true"></ion-input>
+    </ion-item>
+    
+    <div class="ion-padding">
+      <ion-button expand="block" (click)="updateProfile()">
+        Enregistrer
+      </ion-button>
+      <ion-button expand="block" fill="outline" class="ion-margin-top" (click)="cancel()">
+        Annuler
+      </ion-button>
+    </div>
+  </ion-list>
+  
+  <ion-toast 
+    [isOpen]="isToastOpen"
+    [message]="toastMessage"
+    [duration]="3000"
+    position="bottom"
+    [color]="toastColor">
+  </ion-toast>
+</ion-content> 

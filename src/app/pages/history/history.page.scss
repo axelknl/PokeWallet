@@ -1,0 +1,119 @@
+// Style pour les éléments d'historique
+.history-accordion {
+  margin-bottom: 16px;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.history-item {
+  --padding-start: 16px;
+  --padding-end: 16px;
+  --padding-top: 12px;
+  --padding-bottom: 12px;
+}
+
+.history-details {
+  padding: 16px;
+}
+
+.history-content {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.history-image-container {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  margin-bottom: 12px;
+}
+
+.history-image {
+  width: 120px;
+  height: auto;
+  border-radius: 8px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.history-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.info-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+  color: var(--ion-color-medium);
+}
+
+.info-item ion-icon {
+  font-size: 18px;
+  color: var(--ion-color-medium);
+}
+
+.ion-accordion-toggle-icon {
+  display: none !important;
+}
+
+// Couleurs pour les badges et icônes selon le type d'action
+.achat {
+  --background: var(--ion-color-success-tint);
+  --color: var(--ion-color-success-contrast);
+}
+
+.ajout {
+  --background: var(--ion-color-primary-tint);
+  --color: var(--ion-color-primary-contrast);
+}
+
+.vente {
+  --background: var(--ion-color-warning-tint);
+  --color: var(--ion-color-warning-contrast);
+}
+
+.suppression {
+  --background: var(--ion-color-danger-tint);
+  --color: var(--ion-color-danger-contrast);
+}
+
+ion-icon.achat, ion-icon.ajout, ion-icon.vente, ion-icon.suppression {
+  font-size: 24px;
+}
+
+// Style pour les profits/pertes
+.profit {
+  color: var(--ion-color-success);
+  font-weight: bold;
+}
+
+.loss {
+  color: var(--ion-color-danger);
+  font-weight: bold;
+}
+
+// Style pour les appareils plus grands (tablettes, etc.)
+@media (min-width: 768px) {
+  .history-content {
+    flex-direction: row;
+  }
+  
+  .history-image-container {
+    width: 30%;
+    margin-bottom: 0;
+  }
+  
+  .history-image {
+    width: 100%;
+    max-width: 150px;
+  }
+  
+  .history-info {
+    width: 70%;
+  }
+} 

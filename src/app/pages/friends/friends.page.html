@@ -1,0 +1,50 @@
+<app-header [title]="'Amis'" [showBackButton]="true" ></app-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Mes Amis</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-list>
+        <!-- Liste des amis -->
+        <ion-item *ngFor="let friend of friends" (click)="viewFriendProfile(friend)" button>
+          <ion-avatar slot="start">
+            <img [src]="friend.avatarUrl || 'https://ionicframework.com/docs/img/demos/avatar.svg'" alt="Avatar">
+          </ion-avatar>
+          <ion-label>
+            <h2>{{ friend.username }}</h2>
+            <p>{{ friend.email }}</p>
+          </ion-label>
+          <ion-button fill="clear" color="danger" (click)="confirmRemoveFriend(friend); $event.stopPropagation()">
+            <ion-icon name="person-remove"></ion-icon>
+          </ion-button>
+        </ion-item>
+        
+        <!-- Message si aucun ami -->
+        <ion-item class="empty-state" *ngIf="!isLoading && friends.length === 0">
+          <ion-label class="ion-text-center">
+            Vous n'avez pas encore d'amis.
+          </ion-label>
+        </ion-item>
+        
+        <!-- Indicateur de chargement -->
+        <ion-item *ngIf="isLoading">
+          <ion-label class="ion-text-center">
+            <ion-spinner name="circles"></ion-spinner>
+            <p>Chargement des amis...</p>
+          </ion-label>
+        </ion-item>
+      </ion-list>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-button expand="block" color="primary" class="ion-margin-top" (click)="openAddFriendModal()">
+    <ion-icon name="person-add" slot="start"></ion-icon>
+    Ajouter un ami
+  </ion-button>
+</ion-content> 

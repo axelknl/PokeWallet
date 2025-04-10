@@ -1,0 +1,24 @@
+{
+  "formatOnSave": true,
+  "formatOnPaste": true,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "editor.detectIndentation": true,
+  "editor.trimAutoWhitespace": true,
+  "files.trimTrailingWhitespace": true,
+  "files.insertFinalNewline": true,
+  "prettier": {
+    "singleQuote": true,
+    "trailingComma": "es5",
+    "printWidth": 100,
+    "semi": true
+  },
+  "typescript": {
+    "enablePromptUseWorkspaceTsdk": true
+  },
+  "search.exclude": {
+    "node_modules": true,
+    "dist": true,
+    "www": true
+  }
+} 

@@ -1,0 +1,66 @@
+<ion-header>
+  <ion-toolbar>
+    <ion-title>Ajouter un ami</ion-title>
+    <ion-buttons slot="end">
+      <ion-button (click)="dismiss()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header>
+
+<ion-content class="ion-padding">
+  <ion-item lines="none">
+    <app-custom-input
+      [(ngModel)]="friendUsername"
+      label="Nom d'utilisateur"
+      placeholder="Entrez le nom d'utilisateur"
+      name="username"
+      type="text"
+      [showClearButton]="true"
+      [required]="true"
+    ></app-custom-input>
+  </ion-item>
+  
+  <ion-button expand="block" (click)="searchUsers()" class="ion-margin-top" [disabled]="isSearching">
+    <ion-icon name="search" slot="start"></ion-icon>
+    Rechercher
+  </ion-button>
+
+  <!-- Résultats de recherche -->
+  <div class="search-results" *ngIf="searchResults.length > 0">
+    <h4>Résultats de recherche</h4>
+    <ion-list>
+      <ion-item *ngFor="let user of searchResults">
+        <ion-avatar slot="start">
+          <img [src]="user.avatarUrl || 'https://ionicframework.com/docs/img/demos/avatar.svg'" alt="Profile">
+        </ion-avatar>
+        <ion-label>
+          <h2>{{ user.username || 'Utilisateur' }}</h2>
+          <p>{{ user.email }}</p>
+        </ion-label>
+        <ion-button slot="end" (click)="addFriend(user.id)" fill="clear" color="primary">
+          <ion-icon name="person-add"></ion-icon>
+        </ion-button>
+      </ion-item>
+    </ion-list>
+  </div>
+
+  <!-- Message si aucun résultat -->
+  <div class="no-results" *ngIf="isSearching === false && searchResults.length === 0 && friendUsername.trim() !== ''">
+    <ion-item lines="none">
+      <ion-label class="ion-text-center">
+        Aucun utilisateur trouvé avec ce nom d'utilisateur.
+      </ion-label>
+    </ion-item>
+  </div>
+
+  <!-- Instructions -->
+  <div class="instructions" *ngIf="searchResults.length === 0 && !isSearching">
+    <ion-text color="medium">
+      <p class="ion-text-center ion-padding-top">
+        Recherchez un ami par son nom d'utilisateur pour l'ajouter à votre liste d'amis.
+      </p>
+    </ion-text>
+  </div>
+</ion-content> 

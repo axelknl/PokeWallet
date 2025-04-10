@@ -1,0 +1,39 @@
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Bienvenue sur PokeWallet</ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <form [formGroup]="loginForm" (ngSubmit)="onLogin()">
+        <app-custom-input
+          type="email"
+          label="Email"
+          placeholder="Votre adresse email"
+          formControlName="email"
+          [required]="true"
+          [errorMessage]="getErrorMessage('email')"
+        ></app-custom-input>
+
+        <app-custom-input
+          type="password"
+          label="Mot de passe"
+          placeholder="Votre mot de passe"
+          formControlName="password"
+          [required]="true"
+          [errorMessage]="getErrorMessage('password')"
+        ></app-custom-input>
+
+        <ion-button type="submit" expand="block" class="ion-margin-top" [disabled]="isLoading">
+          <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+          <span *ngIf="!isLoading">Se connecter</span>
+        </ion-button>
+      </form>
+
+      <div class="register-link">
+        <p>Vous n'avez pas de compte ?</p>
+        <ion-button fill="clear" routerLink="/register">S'inscrire</ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content> 

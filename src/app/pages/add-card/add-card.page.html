@@ -1,0 +1,113 @@
+<app-header 
+  [title]="pageTitle" 
+  [defaultHref]="'/collection'">
+</app-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <form (ngSubmit)="onSubmit()" #cardForm="ngForm">
+    <ion-card>
+      <ion-card-content>
+        <!-- Prévisualisation de l'image -->
+        <div class="image-preview-container">
+          <div *ngIf="!imageUrl" class="no-image">
+            <ion-icon name="image-outline"></ion-icon>
+            <p>Aucune image sélectionnée</p>
+          </div>
+          <img *ngIf="imageUrl" [src]="imageUrl" alt="Prévisualisation de la carte" class="image-preview">
+        </div>
+
+        <!-- Bouton pour choisir une image -->
+        <ion-button expand="block" (click)="showImageOptions()" color="secondary" class="ion-margin-top">
+          <ion-icon slot="start" name="camera"></ion-icon>
+          Sélectionner une image
+        </ion-button>
+
+        <!-- Champ pour le nom de la carte -->
+        <div class="ion-margin-top">
+          <app-custom-input
+            type="text"
+            label="Nom de la carte"
+            placeholder="Entrez le nom de la carte"
+            [(ngModel)]="cardName"
+            name="cardName"
+            [required]="true"
+            [errorMessage]="nameField.invalid && (nameField.dirty || nameField.touched) ? 'Le nom de la carte est requis' : ''"
+            [showClearButton]="true"
+            #nameField="ngModel">
+          </app-custom-input>
+        </div>
+
+        <!-- Champ pour la valeur de la carte -->
+        <div class="ion-margin-top">
+          <app-custom-input
+            type="number"
+            label="Valeur (€)"
+            placeholder="Entrez la valeur de la carte"
+            [(ngModel)]="cardPrice"
+            name="cardPrice"
+            [required]="true"
+            [min]="0.01"
+            [step]="0.01"
+            [errorMessage]="priceField.invalid && (priceField.dirty || priceField.touched) ? 'Une valeur valide est requise' : ''"
+            [showClearButton]="true"
+            #priceField="ngModel">
+          </app-custom-input>
+        </div>
+
+        <!-- Champ pour le prix d'achat (optionnel) -->
+        <div class="ion-margin-top">
+          <app-custom-input
+            type="number"
+            label="Prix d'achat (€) (optionnel)"
+            placeholder="Entrez le prix d'achat"
+            [(ngModel)]="purchasePrice"
+            name="purchasePrice"
+            [min]="0"
+            [step]="0.01"
+            [showClearButton]="true">
+          </app-custom-input>
+        </div>
+
+        <!-- Champ pour la date d'achat (optionnel) -->
+        <ion-item class="ion-margin-top">
+          <ion-label>Date d'achat (optionnel)</ion-label>
+          <ion-datetime-button datetime="purchaseDate"></ion-datetime-button>
+          <ion-modal [keepContentsMounted]="true">
+            <ng-template>
+              <ion-datetime 
+                id="purchaseDate" 
+                presentation="date" 
+                [(ngModel)]="purchaseDate" 
+                name="purchaseDate"
+                [showDefaultButtons]="true"
+                doneText="Valider"
+                cancelText="Annuler">
+              </ion-datetime>
+            </ng-template>
+          </ion-modal>
+        </ion-item>
+
+        <!-- Toggle pour indiquer si la carte est gradée -->
+        <ion-item class="ion-margin-top">
+          <ion-label>Gradée</ion-label>
+          <ion-toggle 
+            [(ngModel)]="isGraded" 
+            name="isGraded"
+            slot="end">
+          </ion-toggle>
+        </ion-item>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Bouton de soumission -->
+    <div class="form-actions">
+      <ion-button 
+        expand="block" 
+        type="submit" 
+        [disabled]="!cardForm.form.valid || !imageUrl" 
+        class="ion-margin-top">
+        {{ editMode ? 'Mettre à jour' : 'Ajouter' }}
+      </ion-button>
+    </div>
+  </form>
+</ion-content>

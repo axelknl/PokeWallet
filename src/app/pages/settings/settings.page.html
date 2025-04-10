@@ -1,0 +1,60 @@
+<app-header 
+  [title]="'Paramètres'" 
+  [showBackButton]="true" 
+  [defaultHref]="'/profile'"
+  [showThemeToggle]="false">
+</app-header>
+
+<ion-content [fullscreen]="true">
+  <ion-list>
+    <!-- Section Compte -->
+    <ion-item-divider>
+      <ion-label>Compte</ion-label>
+    </ion-item-divider>
+    
+    <ion-item button routerLink="/profile-edit" detail="true">
+      <ion-icon name="person-outline" slot="start"></ion-icon>
+      <ion-label>
+        <h2>Modifier mon profil</h2>
+        <p>Nom d'utilisateur, avatar, etc.</p>
+      </ion-label>
+    </ion-item>
+
+    <!-- Section Préférences -->
+    <ion-item-divider>
+      <ion-label>Préférences</ion-label>
+    </ion-item-divider>
+    <ion-item>
+      <ion-label>Mode sombre</ion-label>
+      <ion-toggle [(ngModel)]="isDarkMode" (ionChange)="toggleTheme()" slot="end"></ion-toggle>
+    </ion-item>
+
+    <ion-item-divider>
+      <ion-label>Confidentialité</ion-label>
+    </ion-item-divider>
+    <ion-item>
+      <ion-label>
+        <h2>Profil public</h2>
+        <p>Les autres utilisateurs peuvent voir votre profil et votre collection</p>
+      </ion-label>
+      <ion-toggle [(ngModel)]="isProfilePublic" (ionChange)="toggleProfileVisibility()" slot="end"></ion-toggle>
+    </ion-item>
+
+    <!-- Liste des paramètres vide pour le moment, à compléter plus tard -->
+    <ion-item-divider>
+      <ion-label>Application</ion-label>
+    </ion-item-divider>
+    <ion-item lines="none">
+      <ion-label>Version</ion-label>
+      <ion-note slot="end">{{ version }}</ion-note>
+    </ion-item>
+  </ion-list>
+  
+  <ion-toast 
+    [isOpen]="isToastOpen"
+    [message]="toastMessage"
+    [duration]="3000"
+    position="bottom"
+    [color]="toastColor">
+  </ion-toast>
+</ion-content> 

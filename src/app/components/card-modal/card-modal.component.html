@@ -1,0 +1,108 @@
+<ion-content class="ion-padding">
+  <div class="card-details">
+    <img [src]="cardImage" [alt]="cardName" class="card-image">
+    <div class="card-info">
+      <h2>{{ cardName }}</h2>
+      <p class="price">Prix actuel: {{ cardPrice | currency:'EUR':'symbol':'1.2-2' }}</p>
+      
+      <!-- Affichage du prix d'achat s'il existe -->
+      <p class="purchase-price" *ngIf="purchasePrice !== undefined">
+        Prix d'achat: {{ purchasePrice | currency:'EUR':'symbol':'1.2-2' }}
+      </p>
+      
+      <!-- Affichage de la date d'achat si elle existe -->
+      <p class="purchase-date" *ngIf="purchaseDate">
+        Date d'achat: {{ purchaseDate | date:'dd/MM/yyyy' }}
+      </p>
+
+      <!-- Affichage de la mention gradée si la carte est gradée -->
+      <p class="graded-mention" *ngIf="isGraded">
+        Carte gradée
+      </p>
+      
+      <!-- Affichage du gain/perte si les deux prix sont disponibles -->
+      <p class="profit-loss" *ngIf="purchasePrice !== undefined && cardPrice !== undefined">
+        <span [class.profit]="cardPrice > purchasePrice" [class.loss]="cardPrice < purchasePrice">
+          {{ cardPrice > purchasePrice ? 'Gain' : 'Perte' }}: 
+          {{ (cardPrice - purchasePrice) | currency:'EUR':'symbol':'1.2-2' }}
+          <span *ngIf="purchasePrice > 0">({{ (cardPrice / purchasePrice - 1) * 100 | number:'1.0-1' }}%)</span>
+        </span>
+      </p>
+    </div>
+    
+    <!-- Formulaire de vente (visible uniquement quand showSaleForm est true) -->
+    <div class="sale-form" *ngIf="showSaleForm">
+      <h3>Marquer comme vendue</h3>
+      
+      <ion-item>
+        <ion-label position="floating">Prix de vente (€)</ion-label>
+        <ion-input type="number" [(ngModel)]="salePrice" min="0" step="0.01"></ion-input>
+      </ion-item>
+      
+      <ion-item>
+        <ion-label position="floating">Date de vente (optionnelle)</ion-label>
+        <ion-datetime-button datetime="saleDatePicker"></ion-datetime-button>
+        <ion-modal [keepContentsMounted]="true">
+          <ng-template>
+            <ion-datetime 
+              id="saleDatePicker"
+              presentation="date"
+              [(ngModel)]="saleDate"
+              [showDefaultButtons]="true"
+              doneText="Valider"
+              cancelText="Annuler">
+            </ion-datetime>
+          </ng-template>
+        </ion-modal>
+      </ion-item>
+      
+      <!-- Affichage du gain/perte potentiel si un prix d'achat existe -->
+      <div class="potential-profit" *ngIf="purchasePrice && calculateProfit()">
+        <p [class.profit]="calculateProfit()!.amount > 0" [class.loss]="calculateProfit()!.amount < 0">
+          {{ calculateProfit()!.amount > 0 ? 'Gain potentiel' : 'Perte potentielle' }}: 
+          {{ calculateProfit()!.amount | currency:'EUR':'symbol':'1.2-2' }}
+          <span *ngIf="purchasePrice > 0">({{ calculateProfit()!.percentage | number:'1.0-1' }}%)</span>
+        </p>
+      </div>
+      
+      <div class="button-container">
+        <ion-button expand="block" (click)="sellCard()" color="success">
+          Confirmer la vente
+        </ion-button>
+        <ion-button expand="block" (click)="toggleSaleForm()" color="medium" fill="outline">
+          Annuler
+        </ion-button>
+      </div>
+    </div>
+    
+    <!-- Boutons d'action -->
+    <div class="action-buttons">
+      <ion-button 
+        color="primary" 
+        expand="block" 
+        (click)="toggleSaleForm()" 
+        *ngIf="!showSaleForm && !readOnly">
+        <ion-icon name="cash-outline"></ion-icon>
+        Carte vendue
+      </ion-button>
+      
+      <ion-button 
+        color="danger" 
+        expand="block" 
+        (click)="deleteCard()" 
+        *ngIf="!showSaleForm && !readOnly">
+        <ion-icon name="trash-outline"></ion-icon>
+        Supprimer la carte
+      </ion-button>
+      
+      <ion-button 
+        color="secondary" 
+        expand="block" 
+        (click)="editCard()" 
+        *ngIf="!showSaleForm && !readOnly">
+        <ion-icon name="create-outline"></ion-icon>
+        Modifier
+      </ion-button>
+    </div>
+  </div>
+</ion-content> 

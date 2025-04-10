@@ -1,0 +1,7 @@
+{
+  "name": "PokeWallet",
+  "integrations": {
+    "capacitor": {}
+  },
+  "type": "angular-standalone"
+}

@@ -1,0 +1,124 @@
+.main-content {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: auto;
+  padding-bottom: 72px; /* Padding pour éviter que le contenu ne soit caché par la navbar */
+  --background: var(--ion-background-color);
+  min-height: calc(100% - 56px);
+}
+
+// Styles pour la nouvelle barre de navigation personnalisée
+.custom-tab-bar-container {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  z-index: 1000;
+  background: transparent;
+  border: none;
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.custom-tab-bar {
+  --background: var(--ion-background-color);
+  --border-style: none;
+  --min-height: 60px;
+  padding-bottom: 10px !important;
+  border-radius: 16px 16px 0 0;
+  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.2);
+}
+
+.tab-buttons {
+  display: flex;
+  justify-content: space-between;
+  width: 100%;
+  padding: 0 10px;
+}
+
+.tab-group {
+  display: flex;
+  width: 40%;
+  justify-content: space-around;
+}
+
+.center-space {
+  width: 20%;
+}
+
+.tab-button {
+  --background: transparent;
+  --background-activated: transparent;
+  --background-focused: transparent;
+  --background-hover: transparent;
+  --box-shadow: none;
+  --color: #777777;
+  --padding-bottom: 0;
+  --padding-top: 0;
+  --padding-start: 0;
+  --padding-end: 0;
+  height: 50px;
+  margin: 0;
+  
+  &.active-tab {
+    --color: var(--ion-color-primary);
+    
+    ion-icon, ion-label {
+      color: var(--ion-color-primary);
+    }
+  }
+}
+
+.tab-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  
+  ion-icon {
+    font-size: 20px;
+    margin-bottom: 4px;
+  }
+  
+  ion-label {
+    font-size: 10px;
+    margin: 0;
+  }
+}
+
+// Style pour le bouton d'ajout flottant
+.fab-button-container {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  top: -20px;
+  z-index: 1001;
+}
+
+.add-button {
+  --background: #5C69FF;
+  --background-activated: #4A56E8;
+  --background-focused: #4A56E8;
+  --background-hover: #4A56E8;
+  --box-shadow: 0 4px 12px rgba(92, 105, 255, 0.5);
+  --color: white;
+  --border-radius: 50%;
+  width: 60px;
+  height: 60px;
+  --padding-start: 0;
+  --padding-end: 0;
+  margin: 0;
+  
+  .add-icon {
+    font-size: 28px;
+  }
+}
+
+// Styles généraux pour le contenu
+ion-content {
+  --padding-bottom: 72px;
+}
+
+ion-content::part(scroll) {
+  overscroll-behavior-y: contain;
+}

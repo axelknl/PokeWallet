@@ -1,0 +1,32 @@
+ion-content {
+    --background: var(--ion-background-color);
+}
+
+ion-list {
+    margin-top: 16px;
+    margin-bottom: 16px;
+    background: transparent;
+}
+
+ion-item {
+    --padding-start: 16px;
+    --inner-padding-end: 16px;
+    --min-height: 56px;
+    --border-radius: 8px;
+    margin: 8px 16px;
+    --background: var(--ion-item-background);
+    --border-color: transparent;
+}
+
+ion-item-divider {
+    --background: transparent;
+    --padding-start: 16px;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    margin-top: 16px;
+}
+
+ion-note {
+    font-size: 14px;
+    color: var(--ion-color-medium);
+} 

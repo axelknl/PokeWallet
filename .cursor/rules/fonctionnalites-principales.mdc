@@ -1,0 +1,35 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Fonctionnalités Principales de PokeWallet
+
+PokeWallet permet de gérer une collection de cartes Pokémon avec les fonctionnalités suivantes :
+
+## Authentification
+
+- [src/app/pages/login/login.page.ts](mdc:src/app/pages/login/login.page.ts) - Page de connexion
+- [src/app/pages/register/register.page.ts](mdc:src/app/pages/register/register.page.ts) - Page d'inscription
+- [src/app/guards/auth.guard.ts](mdc:src/app/guards/auth.guard.ts) - Protection des routes
+- [src/app/services/user.service.ts](mdc:src/app/services/user.service.ts) - Gestion des utilisateurs
+
+## Gestion des Cartes
+
+- [src/app/pages/my-wallet/my-wallet.page.ts](mdc:src/app/pages/my-wallet/my-wallet.page.ts) - Affichage de la collection
+- [src/app/pages/add-card/add-card.page.ts](mdc:src/app/pages/add-card/add-card.page.ts) - Ajout de nouvelles cartes
+- [src/app/pages/pokemon-detail/pokemon-detail.page.ts](mdc:src/app/pages/pokemon-detail/pokemon-detail.page.ts) - Détails d'une carte
+- [src/app/services/card-storage.service.ts](mdc:src/app/services/card-storage.service.ts) - Stockage des cartes
+
+## Profil et Paramètres
+
+- [src/app/pages/profile/profile.page.ts](mdc:src/app/pages/profile/profile.page.ts) - Profil utilisateur
+- [src/app/pages/profile-edit/profile-edit.page.ts](mdc:src/app/pages/profile-edit/profile-edit.page.ts) - Édition du profil
+- [src/app/pages/settings/settings.page.ts](mdc:src/app/pages/settings/settings.page.ts) - Paramètres de l'application
+
+## Historique et Statistiques
+
+- [src/app/pages/history/history.page.ts](mdc:src/app/pages/history/history.page.ts) - Historique des activités
+- [src/app/services/history.service.ts](mdc:src/app/services/history.service.ts) - Gestion de l'historique
+- [src/app/services/collection-history.service.ts](mdc:src/app/services/collection-history.service.ts) - Historique de la collection
+

@@ -1,0 +1,77 @@
+<app-header 
+  [title]="friend?.username ? 'Collection de ' + friend.username : 'Collection'" 
+  [showBackButton]="true">
+</app-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh(); $event.target.complete()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="circles"></ion-spinner>
+    <p>Chargement de la collection...</p>
+  </div>
+
+  <div *ngIf="error && !isLoading" class="error-container">
+    <ion-card color="danger">
+      <ion-card-header>
+        <ion-card-title>Erreur</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        {{ error }}
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <div *ngIf="friend && !isLoading && !error">
+    <!-- Barre de recherche -->
+    <ion-searchbar 
+      [(ngModel)]="searchTerm" 
+      (ionInput)="updateSearch()"
+      placeholder="Rechercher une carte" 
+      animated>
+    </ion-searchbar>
+    
+    <!-- Options de tri -->
+    <ion-segment scrollable mode="md" class="sort-segment">
+      <ion-segment-button (click)="changeSortOption('addedDate')" [class.active]="sortOptions.field === 'addedDate'">
+        Date d'ajout {{ sortOptions.field === 'addedDate' ? (sortOptions.direction === 'asc' ? '↑' : '↓') : '' }}
+      </ion-segment-button>
+      <ion-segment-button (click)="changeSortOption('name')" [class.active]="sortOptions.field === 'name'">
+        Nom {{ sortOptions.field === 'name' ? (sortOptions.direction === 'asc' ? '↑' : '↓') : '' }}
+      </ion-segment-button>
+      <ion-segment-button (click)="changeSortOption('price')" [class.active]="sortOptions.field === 'price'">
+        Prix {{ sortOptions.field === 'price' ? (sortOptions.direction === 'asc' ? '↑' : '↓') : '' }}
+      </ion-segment-button>
+    </ion-segment>
+    
+    <!-- Grille des cartes -->
+    <div class="cards-grid" *ngIf="filteredCards.length > 0">
+      <ion-grid>
+        <ion-row>
+          <ion-col size="4" *ngFor="let card of filteredCards">
+            <ion-card class="card-item" (click)="openCardModal(card)">
+              <div class="card-image-container">
+                <img [src]="card.imageUrl" [alt]="card.name">
+              </div>
+              <ion-card-header>
+                <ion-card-title class="card-name">{{ card.name }}</ion-card-title>
+                <ion-card-subtitle class="card-price">{{ card.price | number:'1.2-2' }} €</ion-card-subtitle>
+              </ion-card-header>
+            </ion-card>
+          </ion-col>
+        </ion-row>
+      </ion-grid>
+    </div>
+    
+    <!-- Message si aucune carte -->
+    <div class="no-cards" *ngIf="filteredCards.length === 0 && !isLoading">
+      <ion-card>
+        <ion-card-content>
+          <p class="ion-text-center">Aucune carte ne correspond à votre recherche.</p>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</ion-content> 

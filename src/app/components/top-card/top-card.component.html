@@ -1,0 +1,17 @@
+<ion-card>
+  <ion-card-content>
+    <ion-title size="small">Top carte</ion-title>
+    <div *ngIf="card; else noCard" class="top-card-container" (click)="openCardModal()">
+      <img [src]="card.imageUrl" [alt]="card.name" class="card-image">
+      <div class="card-info">
+        <h2>{{ card.name }}</h2>
+        <div class="price">{{ card.price | currency:'EUR' }}</div>
+      </div>
+    </div>
+    <ng-template #noCard>
+      <div class="no-card-message">
+        Aucune carte dans votre collection
+      </div>
+    </ng-template>
+  </ion-card-content>
+</ion-card> 

@@ -1,0 +1,103 @@
+.card-details {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+}
+
+.card-image {
+  max-width: 100%;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.card-info {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 10px;
+  background-color: var(--ion-card-background);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+h2 {
+  font-size: 1.5rem;
+  margin-bottom: 1rem;
+  text-align: center;
+}
+
+.price {
+  font-size: 1.2rem;
+  font-weight: bold;
+  color: var(--ion-color-primary);
+  margin-bottom: 0.5rem;
+}
+
+.purchase-price, .purchase-date, .graded-mention {
+  color: var(--ion-color-medium);
+  margin-bottom: 0.3rem;
+}
+
+.profit-loss {
+  margin-top: 0.7rem;
+  font-weight: bold;
+}
+
+.profit {
+  color: var(--ion-color-success);
+}
+
+.loss {
+  color: var(--ion-color-danger);
+}
+
+.action-buttons {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.sell-button, .delete-button {
+  margin-top: 0.5rem;
+}
+
+// Styles pour le formulaire de vente
+.sale-form {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 10px;
+  background-color: var(--ion-card-background);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  margin-top: 1rem;
+}
+
+.sale-form h3 {
+  text-align: center;
+  margin-bottom: 1rem;
+  color: var(--ion-color-success);
+}
+
+.potential-profit {
+  margin: 1rem 0;
+  padding: 0.5rem;
+  border-radius: 5px;
+  background-color: var(--ion-color-light);
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-top: 1rem;
+}
+
+// Style pour améliorer l'affichage des boutons date
+ion-datetime-button {
+  margin-top: 0.5rem;
+}
+
+ion-item {
+  --padding-start: 0;
+  --inner-padding-end: 0;
+  margin-bottom: 1rem;
+} 

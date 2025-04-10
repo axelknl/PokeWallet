@@ -1,0 +1,99 @@
+<app-header 
+  [title]="friend?.username || 'Profil d\'ami'" 
+  [showBackButton]="true">
+</app-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-refresher slot="fixed" (ionRefresh)="refresh(); $event.target.complete()">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+
+  <div *ngIf="isLoading" class="loading-container">
+    <ion-spinner name="circles"></ion-spinner>
+    <p>Chargement du profil...</p>
+  </div>
+
+  <div *ngIf="error && !isLoading" class="error-container">
+    <ion-card color="danger">
+      <ion-card-header>
+        <ion-card-title>Erreur</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        {{ error }}
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <div *ngIf="friend && !isLoading && !error">
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>{{ friend.username }}</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="profile-info">
+          <div class="avatar-container">
+            <img [src]="friend.avatarUrl" alt="Avatar" class="avatar">
+          </div>
+          <div class="user-details">
+            <p><strong>Email:</strong> {{ friend.email }}</p>
+            <p *ngIf="friend.createdAt"><strong>Membre depuis:</strong> {{ formatDate(friend.createdAt) }}</p>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Statistiques de la collection</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="stats">
+          <div class="stat-item">
+            <h3>Nombre de cartes</h3>
+            <p>{{ friend.totalCards || 0 }}</p>
+          </div>
+          <div class="stat-item">
+            <h3>Valeur de la collection</h3>
+            <p>{{ (friend.collectionValue != null ? friend.collectionValue.toFixed(2) : '0.00') }} €</p>
+          </div>
+          <div class="stat-item">
+            <h3>Gains/Pertes totaux</h3>
+            <p class="profit-loss-value" [ngClass]="{'profit': friend.totalProfit > 0, 'loss': friend.totalProfit < 0}">
+              <span>{{ friend.totalProfit > 0 ? '+' : '' }}{{ (friend.totalProfit || 0) | number:'1.2-2' }} €</span>
+            </p>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+
+    <div class="recent-cards" *ngIf="recentCards.length > 0">
+      <ion-card>
+        <app-cards-section 
+          title="Cartes récentes"
+          [cards]="recentCards"
+          [showHistoryButton]="false"
+          (cardClick)="openCardModal($event)"
+        ></app-cards-section>
+        
+        <!-- Bouton pour voir la collection complète -->
+        <ion-card-content>
+          <ion-button expand="block" color="primary" (click)="viewFriendCollection()">
+            <ion-icon name="grid-outline" slot="start"></ion-icon>
+            Voir la collection complète
+          </ion-button>
+        </ion-card-content>
+      </ion-card>
+    </div>
+
+    <div class="no-cards" *ngIf="recentCards.length === 0">
+      <ion-card>
+        <ion-card-header>
+          <ion-card-title>Collection</ion-card-title>
+        </ion-card-header>
+        <ion-card-content>
+          <p class="ion-text-center">Cet utilisateur n'a pas encore de cartes dans sa collection ou son profil est privé.</p>
+        </ion-card-content>
+      </ion-card>
+    </div>
+  </div>
+</ion-content> 

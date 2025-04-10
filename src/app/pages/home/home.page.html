@@ -1,0 +1,69 @@
+<app-header [title]="'Accueil'"></app-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <!-- Skeleton loader pendant le chargement -->
+  <div *ngIf="isLoading" class="skeleton-container">
+    <!-- Skeleton pour la carte principale -->
+    <ion-card class="skeleton-top-card">
+      <ion-skeleton-text [animated]="true" style="width: 100%; height: 200px;"></ion-skeleton-text>
+      <ion-card-header>
+        <ion-skeleton-text [animated]="true" style="width: 60%;"></ion-skeleton-text>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-skeleton-text [animated]="true" style="width: 40%;"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 80%;"></ion-skeleton-text>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Skeleton pour le graphique -->
+    <ion-card>
+      <ion-card-content>
+        <ion-skeleton-text [animated]="true" style="width: 100%; height: 150px;"></ion-skeleton-text>
+      </ion-card-content>
+    </ion-card>
+
+    <!-- Skeleton pour les cartes récentes -->
+    <ion-card>
+      <ion-card-header>
+        <ion-skeleton-text [animated]="true" style="width: 50%;"></ion-skeleton-text>
+      </ion-card-header>
+      <ion-card-content>
+        <div class="skeleton-cards-grid">
+          <div class="skeleton-card" *ngFor="let i of [1, 2, 3]">
+            <ion-skeleton-text [animated]="true" style="width: 100%; height: 120px;"></ion-skeleton-text>
+            <ion-skeleton-text [animated]="true" style="width: 70%; margin-top: 8px;"></ion-skeleton-text>
+            <ion-skeleton-text [animated]="true" style="width: 40%; margin-top: 4px;"></ion-skeleton-text>
+          </div>
+        </div>
+      </ion-card-content>
+    </ion-card>
+  </div>
+
+  <!-- Contenu réel une fois chargé -->
+  <div *ngIf="!isLoading && hasCards">
+    <app-top-card [card]="mostExpensiveCard"></app-top-card>
+
+    <!-- Graphique d'évolution de la valeur -->
+    <ion-card>
+      <app-collection-chart></app-collection-chart>
+    </ion-card>
+
+    <ion-card>
+      <app-cards-section 
+        title="Dernières cartes ajoutées"
+        [cards]="recentCards"
+        (cardClick)="openCardModal($event)">
+      </app-cards-section>
+    </ion-card>
+  </div>
+  
+  <!-- Affichage quand il n'y a pas de cartes et que le chargement est terminé -->
+  <div *ngIf="!isLoading && !hasCards" class="no-cards-container">
+    <ion-icon name="card-outline" class="no-cards-icon"></ion-icon>
+    <h2>Aucune carte dans votre collection</h2>
+    <p>Ajoutez des cartes à votre collection pour les voir apparaître ici.</p>
+    <ion-button routerLink="/collection" expand="block" class="ion-margin-top">
+      Ajouter une carte
+    </ion-button>
+  </div>
+</ion-content> 

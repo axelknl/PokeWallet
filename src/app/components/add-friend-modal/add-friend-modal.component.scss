@@ -1,0 +1,31 @@
+ion-content {
+  --background: var(--ion-color-light);
+}
+
+.search-results {
+  margin-top: 20px;
+}
+
+.search-results h4 {
+  padding-left: 16px;
+  font-weight: 500;
+  color: var(--ion-color-medium);
+}
+
+ion-avatar {
+  margin-right: 10px;
+}
+
+.instructions {
+  margin-top: 30px;
+  padding: 20px;
+}
+
+.no-results {
+  margin-top: 20px;
+}
+
+ion-item ion-button {
+  --padding-start: 8px;
+  --padding-end: 8px;
+} 

@@ -1,0 +1,18 @@
+<div class="search-bar-container">
+  <div class="search-input-wrapper">
+    <ion-icon name="search-outline" class="search-icon"></ion-icon>
+    <input
+      type="text"
+      [placeholder]="placeholder"
+      [(ngModel)]="searchTerm"
+      (input)="onSearchChange($event)"
+      class="search-input"
+    />
+    <ion-icon 
+      *ngIf="hasValue" 
+      name="close-circle-outline" 
+      class="clear-icon" 
+      (click)="clearSearch()"
+    ></ion-icon>
+  </div>
+</div>

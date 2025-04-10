@@ -1,0 +1,225 @@
+.profile-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.5rem;
+}
+
+.avatar-container {
+  margin-bottom: 1rem;
+  position: relative;
+  
+  ion-avatar {
+    width: 128px;
+    height: 128px;
+    margin: 0 auto;
+    border: 4px solid var(--ion-color-primary);
+  }
+
+  .edit-button {
+    position: absolute;
+    bottom: -10px;
+    right: -10px;
+    --padding-start: 0;
+    --padding-end: 0;
+    width: 40px;
+    height: 40px;
+    --border-radius: 50%;
+    --background: var(--ion-color-primary);
+    --background-activated: var(--ion-color-primary-shade);
+
+    ion-icon {
+      font-size: 20px;
+      color: white;
+    }
+  }
+}
+
+.username {
+  font-size: 1.5rem;
+  font-weight: bold;
+  margin: 1rem 0;
+  color: var(--ion-color-dark);
+}
+
+.stats-container {
+  width: 100%;
+  max-width: 500px;
+  margin-top: 1rem;
+
+  ion-card {
+    margin: 0;
+  }
+
+  ion-item {
+    --padding-start: 0;
+    
+    h3 {
+      font-weight: 500;
+      margin-bottom: 0.25rem;
+    }
+
+    p {
+      color: var(--ion-color-medium);
+    }
+  }
+}
+
+.profile-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1rem 0;
+}
+
+.avatar-container {
+  position: relative;
+  
+  .avatar {
+      width: 110px;
+      height: 110px;
+    border-radius: 50%;
+    object-fit: cover;
+      border: 3px solid var(--ion-color-primary);
+  }
+  
+  .edit-button {
+    position: absolute;
+      bottom: 0px;
+      right: 0px;
+    margin: 0;
+      --padding-start: 0;
+      --padding-end: 0;
+      width: 36px;
+      height: 36px;
+      min-height: 36px;
+      --border-radius: 50%;
+      --background: var(--ion-color-primary);
+      --background-activated: var(--ion-color-primary-shade);
+
+      ion-icon {
+        font-size: 18px;
+        color: white;
+      }
+  }
+}
+
+.user-details {
+    flex: 1;
+  
+  p {
+    margin: 0.5rem 0;
+      color: var(--ion-color-medium);
+
+      strong {
+        color: var(--ion-color-dark);
+      }
+    }
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 1rem;
+  padding: 0.5rem;
+  
+  .stat-item {
+    text-align: center;
+    padding: 1rem;
+    background: var(--ion-color-light);
+    border-radius: 8px;
+    
+    h3 {
+      margin: 0 0 0.5rem 0;
+      font-size: 1rem;
+      color: var(--ion-color-medium);
+    }
+    
+    p {
+      margin: 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+      color: var(--ion-color-primary);
+    }
+  }
+}
+
+.recent-cards {
+  width: 100%;
+  max-width: 500px;
+  margin-top: 2rem;
+
+  .section-title {
+    font-size: 1.2rem;
+    font-weight: 500;
+    color: var(--ion-color-dark);
+    margin-bottom: 1rem;
+    text-align: left;
+    width: 100%;
+  }
+
+  .card-preview {
+    margin: 0;
+    border-radius: 8px;
+    overflow: hidden;
+
+    img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      aspect-ratio: 2.5/4.5;
+    }
+  }
+}
+
+.logout-button {
+  margin-top: 2rem;
+  width: 100%;
+  max-width: 500px;
+}
+
+// Styles pour les profits et pertes
+.profit-loss-value {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.5rem;
+  margin: 0;
+  font-weight: bold;
+  padding: 0.25rem 0.5rem;
+  border-radius: 4px;
+}
+
+.profit span {
+  color: var(--ion-color-success);
+}
+
+.loss span {
+  color: var(--ion-color-danger);
+}
+
+.neutral {
+  color: var(--ion-color-medium);
+}
+
+ion-item {
+  --padding-start: 16px;
+  --inner-padding-end: 16px;
+  --min-height: 56px;
+  --border-radius: 8px;
+  margin: 8px 16px;
+  --background: var(--ion-item-background);
+  --border-color: transparent;
+}
+
+
+// Styles pour la section admin
+.admin-section {
+  margin-top: 2rem;
+  border-top: 1px solid var(--ion-color-medium);
+  background-color: rgba(var(--ion-color-warning-rgb), 0.1);
+}
+
+.admin-button {
+  margin-bottom: 1rem;
+}

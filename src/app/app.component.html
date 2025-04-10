@@ -1,0 +1,55 @@
+<ion-app>
+  <div class="main-content">
+    <ion-router-outlet [animated]="false" main></ion-router-outlet>
+  </div>
+  
+  <ion-footer class="custom-tab-bar-container" *ngIf="showTabs">
+    <div class="fab-button-container">
+      <ion-button class="add-button" name="add-card" [routerLink]="['/add-card']" fill="clear">
+        <ion-icon name="add" class="add-icon"></ion-icon>
+      </ion-button>
+    </div>
+    
+    <ion-toolbar class="custom-tab-bar">
+      <div class="tab-buttons">
+        <div class="tab-group">
+          <ion-button class="tab-button" [ngClass]="{'active-tab': activeTab === 'home'}" 
+            [routerLink]="['/home']" routerDirection="root" fill="clear">
+            <div class="tab-content">
+              <ion-icon name="home-outline"></ion-icon>
+              <ion-label>Accueil</ion-label>
+            </div>
+          </ion-button>
+          
+          <ion-button class="tab-button" [ngClass]="{'active-tab': activeTab === 'collection'}" 
+            [routerLink]="['/collection']" routerDirection="root" fill="clear">
+            <div class="tab-content">
+              <ion-icon name="grid-outline"></ion-icon>
+              <ion-label>Collection</ion-label>
+            </div>
+          </ion-button>
+        </div>
+        
+        <div class="center-space"></div>
+        
+        <div class="tab-group">
+          <ion-button class="tab-button" [ngClass]="{'active-tab': activeTab === 'history'}" 
+            [routerLink]="['/history']" routerDirection="root" fill="clear">
+            <div class="tab-content">
+              <ion-icon name="time-outline"></ion-icon>
+              <ion-label>Historique</ion-label>
+            </div>
+          </ion-button>
+          
+          <ion-button class="tab-button" [ngClass]="{'active-tab': activeTab === 'profile'}" 
+            [routerLink]="['/profile']" routerDirection="root" fill="clear">
+            <div class="tab-content">
+              <ion-icon name="person-outline"></ion-icon>
+              <ion-label>Profil</ion-label>
+            </div>
+          </ion-button>
+        </div>
+      </div>
+    </ion-toolbar>
+  </ion-footer>
+</ion-app>

@@ -1,0 +1,82 @@
+<app-header [title]="'Ma Collection'"></app-header>
+
+<ion-content [fullscreen]="true">
+  <div class="search-container">
+    <app-search-bar 
+      placeholder="Rechercher une carte"
+      [debounceTime]="300"
+      (searchChanged)="onSearchChanged($event)"
+    ></app-search-bar>
+    <ion-button id="filter-button" fill="clear">
+      <ion-icon slot="icon-only" name="filter"></ion-icon>
+    </ion-button>
+  </div>
+
+  <ion-popover trigger="filter-button" [dismissOnSelect]="true">
+    <ng-template>
+      <ion-content class="ion-padding">
+        <ion-list>
+          <ion-radio-group [(ngModel)]="sortOption" (ionChange)="applyFilters()">
+            <ion-list-header>
+              <ion-label>Trier par</ion-label>
+            </ion-list-header>
+            
+            <ion-item>
+              <ion-label>Nom (A-Z)</ion-label>
+              <ion-radio slot="start" value="name-asc"></ion-radio>
+            </ion-item>
+            <ion-item>
+              <ion-label>Nom (Z-A)</ion-label>
+              <ion-radio slot="start" value="name-desc"></ion-radio>
+            </ion-item>
+            <ion-item>
+              <ion-label>Prix (croissant)</ion-label>
+              <ion-radio slot="start" value="price-asc"></ion-radio>
+            </ion-item>
+            <ion-item>
+              <ion-label>Prix (décroissant)</ion-label>
+              <ion-radio slot="start" value="price-desc"></ion-radio>
+            </ion-item>
+            <ion-item>
+              <ion-label>Date (plus ancien)</ion-label>
+              <ion-radio slot="start" value="date-asc"></ion-radio>
+            </ion-item>
+            <ion-item>
+              <ion-label>Date (plus récent)</ion-label>
+              <ion-radio slot="start" value="date-desc"></ion-radio>
+            </ion-item>
+          </ion-radio-group>
+
+          <ion-item-divider>
+            <ion-label>Filtres</ion-label>
+          </ion-item-divider>
+          
+          <ion-item>
+            <ion-label>Cartes gradées uniquement</ion-label>
+            <ion-toggle [(ngModel)]="showGradedOnly" (ionChange)="applyFilters()" slot="end"></ion-toggle>
+          </ion-item>
+          
+          <ion-item>
+            <ion-button expand="block" (click)="resetFilters()" fill="outline" class="ion-margin-top">
+              Réinitialiser les filtres
+            </ion-button>
+          </ion-item>
+        </ion-list>
+      </ion-content>
+    </ng-template>
+  </ion-popover>
+
+  <ion-grid *ngIf="filteredCards.length > 0">
+    <ion-row>
+      <ion-col size="4" *ngFor="let card of filteredCards">
+        <ion-card (click)="openCardModal(card)" class="card-preview">
+          <img [src]="card.imageUrl" [alt]="card.name">
+        </ion-card>
+      </ion-col>
+    </ion-row>
+  </ion-grid>
+
+  <div class="no-cards" *ngIf="filteredCards.length === 0">
+    <p>Aucune carte dans votre collection</p>
+  </div>
+</ion-content>

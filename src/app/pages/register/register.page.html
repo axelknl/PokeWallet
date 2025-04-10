@@ -1,0 +1,81 @@
+<ion-content class="ion-padding">
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Créer un compte</ion-card-title>
+    </ion-card-header>
+
+    <ion-card-content>
+      <form (ngSubmit)="onRegister()" [formGroup]="registerForm">
+        <!-- Nom d'utilisateur -->
+        <div class="form-field">
+          <app-custom-input
+            type="text"
+            label="Nom d'utilisateur"
+            placeholder="Entrez votre nom d'utilisateur"
+            formControlName="username"
+            [required]="true"
+            [errorMessage]="username?.invalid && (username?.dirty || username?.touched) ? 
+              (username?.errors?.['required'] ? 'Le nom d\'utilisateur est requis' : 
+              username?.errors?.['minlength'] ? 'Le nom d\'utilisateur doit contenir au moins 3 caractères' : '') : ''"
+            [showClearButton]="true"
+          ></app-custom-input>
+        </div>
+
+        <!-- Email -->
+        <div class="form-field">
+          <app-custom-input
+            type="email"
+            label="Adresse email"
+            placeholder="Entrez votre email"
+            formControlName="email"
+            [required]="true"
+            [errorMessage]="email?.invalid && (email?.dirty || email?.touched) ?
+              (email?.errors?.['required'] ? 'L\'adresse email est requise' :
+              email?.errors?.['email'] ? 'Veuillez entrer une adresse email valide' : '') : ''"
+            [showClearButton]="true"
+          ></app-custom-input>
+        </div>
+
+        <!-- Mot de passe -->
+        <div class="form-field">
+          <app-custom-input
+            type="password"
+            label="Mot de passe"
+            placeholder="Entrez votre mot de passe"
+            formControlName="password"
+            [required]="true"
+            [errorMessage]="password?.invalid && (password?.dirty || password?.touched) ?
+              (password?.errors?.['required'] ? 'Le mot de passe est requis' :
+              password?.errors?.['minlength'] ? 'Le mot de passe doit contenir au moins 6 caractères' : '') : ''"
+            [showClearButton]="false"
+          ></app-custom-input>
+        </div>
+
+        <!-- Confirmation du mot de passe -->
+        <div class="form-field">
+          <app-custom-input
+            type="password"
+            label="Confirmer le mot de passe"
+            placeholder="Confirmez votre mot de passe"
+            formControlName="confirmPassword"
+            [required]="true"
+            [errorMessage]="confirmPassword?.invalid && (confirmPassword?.dirty || confirmPassword?.touched) ?
+              (confirmPassword?.errors?.['required'] ? 'La confirmation du mot de passe est requise' :
+              confirmPassword?.errors?.['passwordMismatch'] ? 'Les mots de passe ne correspondent pas' : '') : ''"
+            [showClearButton]="false"
+          ></app-custom-input>
+        </div>
+
+        <ion-button type="submit" expand="block" class="ion-margin-top" [disabled]="registerForm.invalid || isLoading">
+          <ion-spinner name="crescent" *ngIf="isLoading"></ion-spinner>
+          <span *ngIf="!isLoading">S'inscrire</span>
+        </ion-button>
+      </form>
+
+      <div class="login-link">
+        <p>Vous avez déjà un compte ?</p>
+        <ion-button fill="clear" routerLink="/login">Se connecter</ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+</ion-content> 

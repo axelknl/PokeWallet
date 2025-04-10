@@ -1,0 +1,19 @@
+  <ion-card-content>
+    <ion-title size="small">{{ title }}</ion-title>
+    <ion-grid>
+      <ion-row>
+        <ion-col size="4" *ngFor="let card of cards">
+          <ion-card class="card-preview" (click)="openCardModal(card)">
+            <img [src]="card.imageUrl" [alt]="card.name">
+          </ion-card>
+        </ion-col>
+      </ion-row>
+    </ion-grid>
+    
+    <div class="view-more-container" *ngIf="showHistoryButton">
+      <ion-button class="view-history-button" fill="clear" expand="block" [routerLink]="['/history']">
+        <ion-icon name="time-outline" slot="start"></ion-icon>
+        Voir l'historique complet
+      </ion-button>
+    </div>
+  </ion-card-content>

@@ -1,0 +1,17 @@
+<ion-header [translucent]="true">
+  <ion-toolbar>
+    <ion-buttons slot="start" *ngIf="showBackButton">
+      <ion-back-button [defaultHref]="defaultHref"></ion-back-button>
+    </ion-buttons>
+    <ion-title>{{ title }}</ion-title>
+    <ng-content select="[slot=end-buttons]" *ngIf="customEndButtons"></ng-content>
+    <ion-buttons slot="end" *ngIf="showThemeToggle && !customEndButtons">
+      <ion-button (click)="themeToggleClicked.emit()">
+        <ion-icon [name]="isDarkMode ? 'sunny' : 'moon'" slot="icon-only"></ion-icon>
+      </ion-button>
+      <ion-button *ngIf="showSettingsButton" [routerLink]="['/settings']">
+        <ion-icon name="settings-outline" slot="icon-only"></ion-icon>
+      </ion-button>
+    </ion-buttons>
+  </ion-toolbar>
+</ion-header> 

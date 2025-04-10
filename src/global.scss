@@ -1,0 +1,97 @@
+/*
+ * App Global CSS
+ * ----------------------------------------------------------------------------
+ * Put style rules here that you want to apply globally. These styles are for
+ * the entire app and not just one component. Additionally, this file can be
+ * used as an entry point to import other CSS/Sass files to be included in the
+ * output CSS.
+ * For more information on global stylesheets, visit the documentation:
+ * https://ionicframework.com/docs/layout/global-stylesheets
+ */
+
+/* Core CSS required for Ionic components to work properly */
+@import "@ionic/angular/css/core.css";
+
+/* Basic CSS for apps built with Ionic */
+@import "@ionic/angular/css/normalize.css";
+@import "@ionic/angular/css/structure.css";
+@import "@ionic/angular/css/typography.css";
+@import "@ionic/angular/css/display.css";
+
+/* Optional CSS utils that can be commented out */
+@import "@ionic/angular/css/padding.css";
+@import "@ionic/angular/css/float-elements.css";
+@import "@ionic/angular/css/text-alignment.css";
+@import "@ionic/angular/css/text-transformation.css";
+@import "@ionic/angular/css/flex-utils.css";
+
+/**
+ * Ionic Dark Mode
+ * -----------------------------------------------------
+ * For more info, please see:
+ * https://ionicframework.com/docs/theming/dark-mode
+ */
+
+/* @import "@ionic/angular/css/palettes/dark.always.css"; */
+/* @import "@ionic/angular/css/palettes/dark.class.css"; */
+@import '@ionic/angular/css/palettes/dark.system.css';
+
+/**
+ * Force iOS mode styles
+ * -----------------------------------------------------
+ * Ces styles assurent que l'apparence iOS est appliquée
+ * sur toutes les plateformes
+ */
+:root {
+  --ion-safe-area-top: env(safe-area-inset-top);
+  --ion-safe-area-bottom: env(safe-area-inset-bottom);
+  --ion-font-family: -apple-system, BlinkMacSystemFont, "Helvetica Neue", "Roboto", sans-serif;
+}
+
+/* Désactiver les transitions entre plateformes */
+* {
+  -webkit-transition: none !important;
+  transition: none !important;
+}
+
+/* Styles iOS spécifiques */
+ion-header {
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
+  backdrop-filter: saturate(180%) blur(20px);
+}
+
+ion-toolbar {
+  --background: rgba(var(--ion-background-color-rgb), 0.8);
+}
+
+ion-button {
+  --border-radius: 10px;
+}
+
+/* Styles globaux pour corriger la superposition de la barre de navigation */
+ion-content {
+  --padding-bottom: 72px !important;
+}
+
+ion-content::part(scroll) {
+  padding-bottom: 72px;
+}
+
+.ion-page {
+  margin-bottom: 0 !important;
+}
+
+.footer-content, 
+.bottom-content,
+ion-button[expand="block"] {
+  margin-bottom: 0px !important;
+}
+
+/* S'assurer que les modals ne sont pas affectés par le padding */
+ion-modal ion-content {
+  --padding-bottom: 0px !important;
+}
+
+.ion-accordion-toggle-icon {
+  display: none !important;
+}

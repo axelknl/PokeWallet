@@ -1,0 +1,46 @@
+<div class="custom-input-container">
+  <!-- Label optionnel -->
+  <label *ngIf="label" class="input-label">{{ label }}</label>
+  
+  <div class="input-wrapper" [ngClass]="inputClasses">
+    <input
+      #inputEl
+      [type]="type"
+      [name]="name"
+      [placeholder]="placeholder"
+      [required]="required"
+      [disabled]="isDisabled || disabled"
+      [readonly]="readonly"
+      [maxlength]="maxLength"
+      [minlength]="minLength"
+      [max]="max"
+      [min]="min"
+      [step]="step"
+      [pattern]="pattern"
+      [autocomplete]="autocomplete"
+      autocapitalize="{{autocapitalize}}"
+      [(ngModel)]="value"
+      (focus)="onInputFocus($event)"
+      (blur)="onInputBlur($event)"
+      (input)="onInputChange($event)"
+      class="custom-input"
+    />
+    
+    <!-- Bouton de nettoyage (clear) -->
+    <button 
+      type="button" 
+      *ngIf="showClearButton && value && !isDisabled && !readonly" 
+      class="clear-button" 
+      (click)="onClearClick()"
+      aria-label="Effacer"
+    >
+      <ion-icon name="close-circle-outline"></ion-icon>
+    </button>
+  </div>
+  
+  <!-- Message d'erreur -->
+  <div *ngIf="hasError" class="error-message">
+    <ion-icon name="alert-circle-outline"></ion-icon>
+    <span>{{ errorMessage }}</span>
+  </div>
+</div>

@@ -1,0 +1,23 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Modèles de Données de PokeWallet
+
+Cette règle décrit les principales interfaces et structures de données utilisées dans l'application.
+
+## Interfaces Principales
+
+- [src/app/interfaces/user.interface.ts](mdc:src/app/interfaces/user.interface.ts) - Définit la structure des données utilisateur
+- [src/app/interfaces/pokemon-card.interface.ts](mdc:src/app/interfaces/pokemon-card.interface.ts) - Définit la structure des cartes Pokémon
+- [src/app/interfaces/history-item.interface.ts](mdc:src/app/interfaces/history-item.interface.ts) - Définit la structure des éléments d'historique
+- [src/app/interfaces/collection-value-history.interface.ts](mdc:src/app/interfaces/collection-value-history.interface.ts) - Définit la structure de l'historique de valeur de collection
+
+## Services de Gestion des Données
+
+- [src/app/services/user.service.ts](mdc:src/app/services/user.service.ts) - Gestion des données utilisateur
+- [src/app/services/card-storage.service.ts](mdc:src/app/services/card-storage.service.ts) - Gestion des cartes Pokémon
+- [src/app/services/history.service.ts](mdc:src/app/services/history.service.ts) - Gestion de l'historique des activités
+- [src/app/services/collection-history.service.ts](mdc:src/app/services/collection-history.service.ts) - Suivi de l'évolution de la collection
+

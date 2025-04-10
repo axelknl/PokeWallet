@@ -1,0 +1,97 @@
+<app-header 
+  [title]="'Profil'" 
+  [showThemeToggle]="true"
+  [isDarkMode]="isDarkMode"
+  [showSettingsButton]="true"
+  (themeToggleClicked)="toggleTheme()">
+</app-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <ion-card *ngIf="user">
+    <ion-card-header>
+      <ion-card-title>{{ user.username }}</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="profile-info">
+        <div class="avatar-container">
+          <img [src]="user.avatarUrl" alt="Avatar" class="avatar">
+          <ion-button class="edit-button" (click)="changeProfileImage()">
+            <ion-icon name="camera"></ion-icon>
+          </ion-button>
+        </div>
+        <div class="user-details">
+          <p><strong>Email:</strong> {{ user.email }}</p>
+          <p><strong>Membre depuis:</strong> {{ formatDate(user.createdAt) }}</p>
+          <p><strong>Dernière connexion:</strong> {{ formatDate(user.lastLoginAt) }}</p>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <ion-item lines="none" detail routerLink="/friends">
+    <ion-label>Amis</ion-label>
+    <ion-note slot="end">Amis</ion-note>
+  </ion-item>
+
+  <ion-card>
+    <ion-card-header>
+      <ion-card-title>Statistiques de la collection</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <div class="stats">
+        <div class="stat-item">
+          <h3>Nombre de cartes</h3>
+          <p>{{ user?.totalCards || 0 }}</p>
+        </div>
+        <div class="stat-item">
+          <h3>Valeur de la collection</h3>
+          <p>{{ (user?.collectionValue != null ? user?.collectionValue?.toFixed(2) : '0.00') }} €</p>
+        </div>
+        <div class="stat-item">
+          <h3>Gains/Pertes totaux</h3>
+          <ng-container *ngIf="user != null; else emptyProfit">
+            <p class="profit-loss-value" [ngClass]="{'profit': user.totalProfit > 0, 'loss': user.totalProfit < 0}">
+              <span>{{ user.totalProfit > 0 ? '+' : '' }}{{ (user.totalProfit || 0) | number:'1.2-2' }} €</span>
+            </p>
+          </ng-container>
+          <ng-template #emptyProfit>
+            <p class="profit-loss-value neutral">0.00 €</p>
+          </ng-template>
+        </div>
+      </div>
+    </ion-card-content>
+  </ion-card>
+
+  <div class="recent-cards" *ngIf="recentCards.length > 0">
+    <ion-card>
+      <app-cards-section 
+        title="Derniers ajouts"
+        [cards]="recentCards"
+        (cardClick)="openCardModal($event)"
+      ></app-cards-section>
+    </ion-card>
+  </div>
+
+  <ion-button expand="block" color="danger" class="logout-button" (click)="logout()">
+    <ion-icon name="log-out-outline" slot="start"></ion-icon>
+    Déconnexion
+  </ion-button>
+
+  <!-- Section admin visible uniquement pour les administrateurs -->
+  <ion-card *ngIf="user?.isAdmin" class="admin-section">
+    <ion-card-header>
+      <ion-card-title>Administration</ion-card-title>
+    </ion-card-header>
+    <ion-card-content>
+      <ion-button expand="block" (click)="runTotalProfitMigration()" [disabled]="isMigrationRunning" color="tertiary" class="admin-button">
+        <ion-icon name="calculator-outline" slot="start"></ion-icon>
+        {{ isMigrationRunning ? 'Migration en cours...' : 'Recalculer les gains/pertes des utilisateurs' }}
+      </ion-button>
+      
+      <ion-button expand="block" (click)="runProfileVisibilityMigration()" [disabled]="isMigrationRunning" color="tertiary" class="admin-button">
+        <ion-icon name="eye-outline" slot="start"></ion-icon>
+        Appliquer la confidentialité des profils
+      </ion-button>
+    </ion-card-content>
+  </ion-card>
+</ion-content>

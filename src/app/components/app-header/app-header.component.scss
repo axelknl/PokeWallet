@@ -1,0 +1,10 @@
+ion-toolbar {
+  --background: var(--ion-background-color);
+  --color: var(--ion-text-color);
+  border-width: 0 !important;
+}
+
+ion-title {
+  font-size: 1.2rem;
+  font-weight: 600;
+} 

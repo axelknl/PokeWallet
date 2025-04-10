@@ -1,0 +1,22 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Structure du Projet PokeWallet
+
+PokeWallet est une application Ionic/Angular permettant de gérer une collection de cartes Pokémon.
+
+## Architecture du Projet
+
+- [src/app/app.routes.ts](mdc:src/app/app.routes.ts) - Définit toutes les routes de l'application
+- [src/app/app.component.ts](mdc:src/app/app.component.ts) - Composant principal de l'application
+- [src/app/app.config.ts](mdc:src/app/app.config.ts) - Configuration de l'application
+
+## Répertoires Principaux
+
+- **Pages** : [src/app/pages/](mdc:src/app/pages) contient les pages principales de l'application
+- **Services** : [src/app/services/](mdc:src/app/services) contient les services pour la logique métier
+- **Composants** : [src/app/components/](mdc:src/app/components) contient les composants réutilisables
+- **Interfaces** : [src/app/interfaces/](mdc:src/app/interfaces) définit les types et interfaces
+

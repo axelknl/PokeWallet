@@ -1,0 +1,75 @@
+.login-container {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+}
+
+ion-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+ion-card {
+  width: 100%;
+  max-width: 400px;
+  margin: 16px auto;
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+}
+
+ion-card-header {
+  padding-bottom: 0;
+}
+
+ion-card-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: var(--ion-color-primary);
+  margin-bottom: 8px;
+  text-align: center;
+}
+
+ion-card-content {
+  padding: 24px;
+}
+
+form {
+  ion-item {
+    --padding-start: 0;
+    --border-color: #ddd;
+    margin-bottom: 16px;
+  }
+}
+
+ion-button[type="submit"] {
+  margin-top: 24px;
+  --border-radius: 8px;
+  --box-shadow: none;
+  height: 44px;
+  font-weight: 500;
+}
+
+.register-link {
+  margin-top: 24px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  
+  p {
+    margin: 0;
+    color: var(--ion-color-medium);
+    font-size: 14px;
+  }
+  
+  ion-button {
+    margin: 8px 0 0;
+    font-weight: 500;
+    --color: var(--ion-color-primary);
+    --padding-top: 0;
+    --padding-bottom: 0;
+  }
+}

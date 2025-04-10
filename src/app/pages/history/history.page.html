@@ -1,0 +1,138 @@
+<app-header 
+  [title]="'Historique'" 
+  [defaultHref]="'/profile'">
+</app-header>
+
+<ion-content [fullscreen]="true" class="ion-padding">
+  <!-- Refresh -->
+  <ion-refresher slot="fixed" (ionRefresh)="handleRefresh($event)">
+    <ion-refresher-content></ion-refresher-content>
+  </ion-refresher>
+  
+  <!-- Sélecteur de période -->
+  <ion-card class="period-selector-card">
+    <ion-card-content>
+      <div class="period-selector-container">
+        <ion-select 
+          label="Période" 
+          labelPlacement="stacked" 
+          [(ngModel)]="selectedPeriod" 
+          interface="popover"
+          class="period-select">
+          <ion-select-option *ngFor="let option of periodOptions" [value]="option.value">
+            {{ option.label }}
+          </ion-select-option>
+        </ion-select>
+        
+        <ion-button 
+          (click)="searchWithPeriod()" 
+          class="search-button"
+          [disabled]="loading">
+          <ion-icon name="search-outline" slot="start"></ion-icon>
+          Rechercher
+        </ion-button>
+      </div>
+    </ion-card-content>
+  </ion-card>
+  
+  <!-- Affichage des éléments d'historique -->
+  <ng-container *ngIf="!loading; else loadingTemplate">
+    <div *ngIf="historyItems.length > 0; else noItems">
+      <ion-accordion-group>
+        <ion-accordion *ngFor="let item of historyItems" class="history-accordion">
+          <ion-item slot="header" class="history-item">
+            <ion-icon 
+              [name]="getActionTypeIcon(item.actionType)" 
+              slot="start" 
+              [class]="getActionTypeClass(item.actionType)">
+            </ion-icon>
+            <ion-label>
+              <h2>{{ item.cardName }}</h2>
+              <p>{{ formatDate(item.date) }}</p>
+            </ion-label>
+            <ion-badge slot="end" [class]="getActionTypeClass(item.actionType)">
+              {{ 
+                item.actionType === 'achat' ? 'Achat' : 
+                item.actionType === 'vente' ? 'Vente' :
+                item.actionType === 'suppression' ? 'Suppression' : 'Ajout' 
+              }}
+            </ion-badge>
+          </ion-item>
+          
+          <div slot="content" class="history-details">
+            <div class="history-content">
+              <div class="history-image-container">
+                <img [src]="item.cardImageUrl" [alt]="item.cardName" class="history-image">
+              </div>
+              
+              <div class="history-info">
+                <div class="info-item">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <span>Date d'action: {{ formatDate(item.date) }}</span>
+                </div>
+                
+                <div class="info-item" *ngIf="item.actionType === 'achat' && item.purchaseDate">
+                  <ion-icon name="time-outline"></ion-icon>
+                  <span>Date d'achat: {{ formatDate(item.purchaseDate) }}</span>
+                </div>
+                
+                <div class="info-item" *ngIf="item.actionType === 'achat' && item.purchasePrice">
+                  <ion-icon name="cash-outline"></ion-icon>
+                  <span>Prix d'achat: {{ item.purchasePrice | currency:'EUR':'symbol':'1.2-2' }}</span>
+                </div>
+                
+                <!-- Informations pour les ventes -->
+                <div class="info-item" *ngIf="item.actionType === 'vente' && item.saleDate">
+                  <ion-icon name="calendar-outline"></ion-icon>
+                  <span>Date de vente: {{ formatDate(item.saleDate) }}</span>
+                </div>
+                
+                <div class="info-item" *ngIf="item.actionType === 'vente' && item.salePrice">
+                  <ion-icon name="cash-outline"></ion-icon>
+                  <span>Prix de vente: {{ item.salePrice | currency:'EUR':'symbol':'1.2-2' }}</span>
+                </div>
+                
+                <!-- Profit/Perte pour les ventes -->
+                <div class="info-item" *ngIf="item.actionType === 'vente' && item.profit !== undefined">
+                  <ion-icon [name]="item.profit >= 0 ? 'trending-up-outline' : 'trending-down-outline'"></ion-icon>
+                  <span [class.profit]="item.profit >= 0" [class.loss]="item.profit < 0">
+                    {{ item.profit >= 0 ? 'Gain' : 'Perte' }}: 
+                    {{ item.profit | currency:'EUR':'symbol':'1.2-2' }}
+                    <ng-container *ngIf="item.purchasePrice && item.purchasePrice > 0">
+                      ({{ (item.salePrice! / item.purchasePrice - 1) * 100 | number:'1.0-1' }}%)
+                    </ng-container>
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        </ion-accordion>
+      </ion-accordion-group>
+    </div>
+  </ng-container>
+  
+  <!-- Template de chargement -->
+  <ng-template #loadingTemplate>
+    <ion-card *ngFor="let i of [1, 2, 3, 4, 5]">
+      <ion-card-header>
+        <ion-skeleton-text [animated]="true" style="width: 60%"></ion-skeleton-text>
+      </ion-card-header>
+      <ion-card-content>
+        <ion-skeleton-text [animated]="true" style="width: 80%"></ion-skeleton-text>
+        <ion-skeleton-text [animated]="true" style="width: 40%"></ion-skeleton-text>
+      </ion-card-content>
+    </ion-card>
+  </ng-template>
+  
+  <!-- Template pour aucun élément -->
+  <ng-template #noItems>
+    <ion-card>
+      <ion-card-header>
+        <ion-card-title>Aucun historique</ion-card-title>
+      </ion-card-header>
+      <ion-card-content>
+        <p>Aucun historique trouvé pour la période sélectionnée.</p>
+      </ion-card-content>
+    </ion-card>
+  </ng-template>
+</ion-content> 
