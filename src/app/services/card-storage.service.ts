@@ -21,18 +21,11 @@ import { BehaviorSubject, Observable } from 'rxjs';
 import { CollectionHistoryService } from './collection-history.service';
 import { HistoryService } from './history.service';
 import { HistoryActionType } from '../interfaces/history-item.interface';
-import { Preferences } from '@capacitor/preferences';
 
 @Injectable({
   providedIn: 'root'
 })
 export class CardStorageService {
-  private readonly STORAGE_KEY = 'pokemon_cards';
-  private readonly TOTAL_VALUE_KEY = 'collection_total_value';
-  private readonly CACHE_TIMESTAMP_KEY = 'cards_cache_timestamp';
-  private readonly CARD_IDS_KEY = 'card_ids';
-  private readonly CACHE_EXPIRY_TIME = 5 * 60 * 1000; // 5 minutes en millisecondes
-  
   // Utiliser BehaviorSubject pour réagir aux changements
   private cardsSubject = new BehaviorSubject<PokemonCard[]>([]);
   private totalValueSubject = new BehaviorSubject<number>(0);
@@ -46,10 +39,9 @@ export class CardStorageService {
   // Empêcher les rechargements multiples
   private isLoading = false;
 
-  // Système de cache pour éviter les appels multiples à Firestore
+  // État d'initialisation des données
   private dataInitialized = false;
   private currentUserId: string | null = null;
-  private lastCardUpdate: number = 0;
 
   constructor(
     private firestore: Firestore,
@@ -74,7 +66,7 @@ export class CardStorageService {
     });
   }
 
-  // Charge les cartes depuis le cache local ou Firestore si nécessaire
+  // Charge les cartes depuis Firestore
   private async loadCards(): Promise<void> {
     try {
       const user = this.userService.getCurrentUser();
@@ -83,156 +75,11 @@ export class CardStorageService {
         return;
       }
 
-      // Vérifier le cache local d'abord
-      const cachedData = await this.loadFromCache();
-
-      if (cachedData) {
-        // Utiliser les données du cache
-        this.cardsSubject.next(cachedData.cards);
-        this.totalValueSubject.next(cachedData.totalValue);
-        this.cardsLoaded.next(true);
-        this.dataInitialized = true;
-        
-        // Rechargement en arrière-plan si le cache est ancien
-        if (this.isCacheExpired()) {
-          this.loadCardsFromFirestore(false);
-        }
-      } else {
-        // Aucun cache disponible, charger depuis Firestore
-        await this.loadCardsFromFirestore(true);
-      }
+      // Charger depuis Firestore
+      await this.loadCardsFromFirestore(true);
     } catch (error) {
       console.error('Erreur lors du chargement des cartes:', error);
-      // En cas d'erreur, essayer de charger depuis Firestore
-      await this.loadCardsFromFirestore(true);
-    }
-  }
-
-  // Vérifie si le cache est expiré
-  private isCacheExpired(): boolean {
-    const now = Date.now();
-    return now - this.lastCardUpdate > this.CACHE_EXPIRY_TIME;
-  }
-
-  // Charge les données depuis le cache local
-  private async loadFromCache(): Promise<{cards: PokemonCard[], totalValue: number} | null> {
-    try {
-      const userId = this.currentUserId;
-      if (!userId) return null;
-
-      // Récupérer le timestamp du dernier cache
-      const timestampResult = await Preferences.get({ key: `${this.CACHE_TIMESTAMP_KEY}_${userId}` });
-      if (!timestampResult.value) return null;
-      
-      this.lastCardUpdate = parseInt(timestampResult.value);
-      
-      // Récupérer la liste des IDs de cartes
-      const cardIdsResult = await Preferences.get({ key: `${this.CARD_IDS_KEY}_${userId}` });
-      if (!cardIdsResult.value) return null;
-      
-      const cardIds = JSON.parse(cardIdsResult.value) as string[];
-      
-      // Récupérer chaque carte individuellement
-      const cards: PokemonCard[] = [];
-      for (const cardId of cardIds) {
-        const cardResult = await Preferences.get({ key: `${this.STORAGE_KEY}_${userId}_${cardId}` });
-        if (cardResult.value) {
-          const card = JSON.parse(cardResult.value) as PokemonCard;
-          
-          // Convertir les dates
-          card.addedDate = new Date(card.addedDate);
-          if (card.purchaseDate) {
-            card.purchaseDate = new Date(card.purchaseDate);
-          }
-          if (card.lastModificationDate) {
-            card.lastModificationDate = new Date(card.lastModificationDate);
-          }
-          
-          cards.push(card);
-        }
-      }
-      
-      // Si aucune carte n'a été récupérée, considérer que le cache est invalide
-      if (cards.length === 0) return null;
-      
-      // Récupérer la valeur totale en cache
-      const totalValueResult = await Preferences.get({ key: `${this.TOTAL_VALUE_KEY}_${userId}` });
-      const totalValue = totalValueResult.value ? parseFloat(totalValueResult.value) : 0;
-      
-      return { cards, totalValue };
-    } catch (error) {
-      console.error('Erreur lors du chargement depuis le cache:', error);
-      return null;
-    }
-  }
-
-  // Sauvegarde les données dans le cache local
-  private async saveToCache(cards: PokemonCard[], totalValue: number): Promise<void> {
-    try {
-      const userId = this.currentUserId;
-      if (!userId) return;
-      
-      const now = Date.now();
-      this.lastCardUpdate = now;
-      
-      // Sauvegarder le timestamp du cache
-      await Preferences.set({
-        key: `${this.CACHE_TIMESTAMP_KEY}_${userId}`,
-        value: now.toString()
-      });
-      
-      // Sauvegarder la liste des IDs de cartes
-      const cardIds = cards.map(card => card.id);
-      await Preferences.set({
-        key: `${this.CARD_IDS_KEY}_${userId}`,
-        value: JSON.stringify(cardIds)
-      });
-      
-      // Sauvegarder chaque carte individuellement
-      for (const card of cards) {
-        try {
-          await Preferences.set({
-            key: `${this.STORAGE_KEY}_${userId}_${card.id}`,
-            value: JSON.stringify(card)
-          });
-        } catch (cardError) {
-          console.warn(`Impossible de sauvegarder la carte ${card.id} dans le cache:`, cardError);
-          // Continuer avec les autres cartes même si une échoue
-        }
-      }
-      
-      // Sauvegarder la valeur totale
-      await Preferences.set({
-        key: `${this.TOTAL_VALUE_KEY}_${userId}`,
-        value: totalValue.toString()
-      });
-    } catch (error) {
-      console.error('Erreur lors de la sauvegarde dans le cache:', error);
-    }
-  }
-
-  // Supprime une carte du cache
-  private async removeCardFromCache(cardId: string): Promise<void> {
-    try {
-      const userId = this.currentUserId;
-      if (!userId) return;
-      
-      // Supprimer la carte du cache
-      await Preferences.remove({ key: `${this.STORAGE_KEY}_${userId}_${cardId}` });
-      
-      // Mettre à jour la liste des IDs
-      const cardIdsResult = await Preferences.get({ key: `${this.CARD_IDS_KEY}_${userId}` });
-      if (cardIdsResult.value) {
-        const cardIds = JSON.parse(cardIdsResult.value) as string[];
-        const updatedCardIds = cardIds.filter(id => id !== cardId);
-        
-        await Preferences.set({
-          key: `${this.CARD_IDS_KEY}_${userId}`,
-          value: JSON.stringify(updatedCardIds)
-        });
-      }
-    } catch (error) {
-      console.error(`Erreur lors de la suppression de la carte ${cardId} du cache:`, error);
+      this.cardsLoaded.next(true);
     }
   }
 
@@ -243,7 +90,6 @@ export class CardStorageService {
     this.cardsLoaded.next(false);
     this.dataInitialized = false;
     this.currentUserId = null;
-    this.lastCardUpdate = 0;
   }
 
   // Charger les cartes depuis Firestore
@@ -287,9 +133,6 @@ export class CardStorageService {
 
       // Calculer la valeur totale
       const totalValue = cards.reduce((sum, card) => sum + card.price, 0);
-      
-      // Sauvegarder dans le cache local
-      await this.saveToCache(cards, totalValue);
 
       if (updateUI) {
         // Mettre à jour le BehaviorSubject avec les nouvelles cartes
@@ -321,15 +164,7 @@ export class CardStorageService {
       return Promise.resolve();
     }
     
-    // Si le cache existe et n'est pas expiré, simplement renvoyer les données en cache
-    if (this.dataInitialized && !this.isCacheExpired()) {
-      // Initialiser l'historique avec la valeur actuelle
-      const totalValue = this.totalValueSubject.getValue();
-      await this.historyService.initializeHistoryIfNeeded(totalValue);
-      return Promise.resolve();
-    }
-    
-    // Sinon, forcer un rechargement depuis Firestore
+    // Forcer un rechargement depuis Firestore
     return this.loadCardsFromFirestore().then(() => {
       // Initialiser l'historique avec la valeur actuelle si nécessaire
       const totalValue = this.totalValueSubject.getValue();
@@ -385,9 +220,6 @@ export class CardStorageService {
       
       // Ajouter une entrée dans l'historique des actions utilisateur
       await this.userHistoryService.addHistoryEntry(newCard);
-      
-      // Mettre à jour le cache
-      await this.saveToCache(updatedCards, this.totalValueSubject.getValue());
     } catch (error) {
       console.error('Erreur lors de l\'ajout de la carte:', error);
       throw error;
@@ -449,12 +281,6 @@ export class CardStorageService {
 
       // Mettre à jour les statistiques de l'utilisateur
       this.updateUserStats();
-      
-      // Supprimer la carte du cache
-      await this.removeCardFromCache(cardId);
-      
-      // Mettre à jour le reste du cache
-      await this.saveToCache(updatedCards, this.totalValueSubject.getValue());
     } catch (error) {
       console.error('Erreur lors de la vente de la carte:', error);
       throw error;
@@ -486,12 +312,6 @@ export class CardStorageService {
       this.calculateTotalValue();
       // Mettre à jour les statistiques de l'utilisateur
       this.updateUserStats();
-      
-      // Supprimer la carte du cache
-      await this.removeCardFromCache(cardId);
-      
-      // Mettre à jour le reste du cache
-      await this.saveToCache(updatedCards, this.totalValueSubject.getValue());
     } catch (error) {
       console.error('Erreur lors de la suppression de la carte:', error);
       throw error;
@@ -574,57 +394,12 @@ export class CardStorageService {
         ];
         this.cardsSubject.next(updatedCards);
         
-        // Mettre à jour le cache individuel pour cette carte
-        try {
-          const userId = this.currentUserId;
-          if (userId) {
-            await Preferences.set({
-              key: `${this.STORAGE_KEY}_${userId}_${cardId}`,
-              value: JSON.stringify(updatedCard)
-            });
-          }
-        } catch (error) {
-          console.warn(`Erreur lors de la mise à jour de la carte ${cardId} dans le cache:`, error);
-        }
-        
         // Mettre à jour la valeur totale
         this.calculateTotalValue();
-        await Preferences.set({
-          key: `${this.TOTAL_VALUE_KEY}_${this.currentUserId}`,
-          value: this.totalValueSubject.getValue().toString()
-        });
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la carte', error);
       throw error;
-    }
-  }
-  
-  // Nettoie tout le cache pour l'utilisateur actuel
-  async clearCache(): Promise<void> {
-    try {
-      const userId = this.currentUserId;
-      if (!userId) return;
-      
-      // Récupérer la liste des IDs de cartes
-      const cardIdsResult = await Preferences.get({ key: `${this.CARD_IDS_KEY}_${userId}` });
-      if (cardIdsResult.value) {
-        const cardIds = JSON.parse(cardIdsResult.value) as string[];
-        
-        // Supprimer chaque carte du cache
-        for (const cardId of cardIds) {
-          await Preferences.remove({ key: `${this.STORAGE_KEY}_${userId}_${cardId}` });
-        }
-      }
-      
-      // Supprimer les clés principales
-      await Preferences.remove({ key: `${this.CARD_IDS_KEY}_${userId}` });
-      await Preferences.remove({ key: `${this.TOTAL_VALUE_KEY}_${userId}` });
-      await Preferences.remove({ key: `${this.CACHE_TIMESTAMP_KEY}_${userId}` });
-      
-      console.log('Cache nettoyé avec succès');
-    } catch (error) {
-      console.error('Erreur lors du nettoyage du cache:', error);
     }
   }
 } 
