@@ -47,8 +47,6 @@ export class HomePage implements OnInit, OnDestroy {
   mostExpensiveCard: PokemonCard | null = null;
   isLoading: boolean = true;
   private cardsSubscription: Subscription | null = null;
-  private cardsLoadedSubscription: Subscription | null = null;
-  private cardsLoaded = false;
 
   constructor(
     private cardStorage: CardStorageService,
@@ -75,42 +73,25 @@ export class HomePage implements OnInit, OnDestroy {
       }
       this.isLoading = false;
     });
-
-    // S'abonner à l'état de chargement des cartes
-    this.cardsLoadedSubscription = this.cardStorage.cardsLoaded$.subscribe(loaded => {
-      if (loaded && !this.cardsLoaded) {
-        this.cardsLoaded = true;
-        // Ne recharger qu'une seule fois pour éviter la boucle infinie
-        this.cardStorage.reloadCards().then(() => {
-          // L'état de chargement sera mis à jour par la souscription aux cartes
-        });
-      }
-    });
   }
 
   ionViewWillEnter() {
     // Réinitialiser l'état de chargement quand on entre dans la vue
     this.isLoading = true;
     
-    // Forcer le rechargement uniquement si la vue est réactivée
-    if (this.cardsLoaded) {
-      this.cardStorage.reloadCards().then(() => {
-        // Une fois les cartes rechargées, on met fin au chargement
-        this.isLoading = false;
-      });
-      
-      // Charger l'historique de la collection
-      this.historyService.loadCollectionHistory();
-    }
+    // Forcer le rechargement lorsqu'on revient sur cette page
+    this.cardStorage.reloadCards().then(() => {
+      this.isLoading = false;
+    });
+    
+    // Charger l'historique de la collection
+    this.historyService.loadCollectionHistory();
   }
 
   ngOnDestroy() {
     // Se désabonner pour éviter les fuites de mémoire
     if (this.cardsSubscription) {
       this.cardsSubscription.unsubscribe();
-    }
-    if (this.cardsLoadedSubscription) {
-      this.cardsLoadedSubscription.unsubscribe();
     }
   }
 
