@@ -93,7 +93,7 @@ export class MyWalletPage implements OnInit, OnDestroy {
   ngOnInit() {
     // S'abonner aux changements des cartes
     this.cardsSubscription = this.cardStorage.cards$.subscribe(cards => {
-      this.cards = cards;
+      this.cards = cards || [];
       this.applyFilters();
     });
   }

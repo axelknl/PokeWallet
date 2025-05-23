@@ -1,7 +1,7 @@
 # Documentation d'Implémentation de la Stratégie de Mise en Cache
 
-**Version:** 0.2  
-**Date de dernière mise à jour:** 18 mai 2024
+**Version:** 0.5  
+**Date de dernière mise à jour:** 25 mai 2024
 
 ## Documentation Fonctionnelle
 
@@ -13,13 +13,27 @@ La solution mise en place exploite les BehaviorSubjects de RxJS pour stocker les
 
 ### Fonctionnalités Implémentées
 
-À ce stade de l'implémentation (Phase 1 - Préparation et Architecture), les fonctionnalités suivantes ont été réalisées :
+#### Phase 1 - Préparation et Architecture
 
 - **Analyse des services existants :** Les services CardStorageService, UserService, HistoryService et CollectionHistoryService ont été identifiés comme cibles principales pour l'optimisation par mise en cache.
 
 - **Architecture de cache :** Une architecture standardisée basée sur BehaviorSubject a été définie pour tous les services, avec une gestion cohérente du cycle de vie du cache. L'interface `CacheableService<T>` et la classe abstraite `BaseCacheService<T>` ont été créées pour faciliter l'implémentation cohérente du pattern de cache.
 
 - **Tests unitaires :** Une suite de tests unitaires a été mise en place pour valider le fonctionnement du cache, sa réinitialisation et sa gestion des erreurs.
+
+#### Phase 2 - Implémentation du Cache pour CardStorageService
+
+- **Refactorisation du CardStorageService :** Le service a été étendu depuis BaseCacheService pour hériter du pattern de cache standardisé. Les BehaviorSubjects existants ont été remplacés par ceux de la classe de base.
+
+- **Implémentation de fetchFromSource :** Une méthode fetchFromSource a été implémentée pour charger les données depuis Firebase, conforme à l'architecture de cache définie.
+
+- **Migration des méthodes CRUD :** Les méthodes d'ajout, de suppression et de modification des cartes ont été adaptées pour utiliser le cache via updateCache au lieu des BehaviorSubjects précédents.
+
+- **Gestion des erreurs et rollback :** Toutes les méthodes CRUD (addCard, removeCard, updateCard) ont été améliorées pour sauvegarder l'état du cache avant modification et le restaurer en cas d'erreur.
+
+- **Intégration avancée avec l'authentification :** Le service a été amélioré pour gérer de manière robuste les connexions, déconnexions et changements d'utilisateur, assurant l'isolation complète des données entre utilisateurs.
+
+- **Tests unitaires spécifiques :** Des tests unitaires pour CardStorageService ont été créés pour valider le fonctionnement du cache, sa réinitialisation et les opérations CRUD avec leurs mécanismes de gestion d'erreurs.
 
 ### Bénéfices Attendus
 
@@ -103,7 +117,317 @@ export abstract class BaseCacheService<T> implements CacheableService<T> {
 }
 ```
 
-#### Cycle de Vie du Cache
+### Implémentation du Cache pour CardStorageService
+
+Le CardStorageService a été refactorisé pour étendre BaseCacheService et implémenter le pattern de cache standardisé :
+
+#### 1. Extension de BaseCacheService
+
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class CardStorageService extends BaseCacheService<PokemonCard[]> {
+  // BehaviorSubject additionnel pour la valeur totale
+  private totalValueSubject = new BehaviorSubject<number>(0);
+  
+  // Observable public de la valeur totale
+  public totalValue$ = this.totalValueSubject.asObservable();
+  
+  // ...
+}
+```
+
+#### 2. Implémentation de fetchFromSource
+
+```typescript
+protected override async fetchFromSource(userId: string): Promise<PokemonCard[]> {
+  try {
+    if (!userId) {
+      throw new Error('ID utilisateur requis pour récupérer les cartes');
+    }
+
+    const cardsCollection = collection(this.firestore, 'users', userId, 'cards');
+    const cardsQuery = query(cardsCollection, orderBy('addedDate', 'desc'));
+    const snapshot = await getDocs(cardsQuery);
+
+    const cards = snapshot.docs.map(doc => {
+      const data = doc.data() as any;
+      return {
+        id: doc.id,
+        name: data.name,
+        imageUrl: data.imageUrl,
+        price: data.price,
+        // ...autres propriétés...
+      };
+    });
+
+    // Actions supplémentaires après chargement
+    await this.historyService.initializeHistoryIfNeeded(totalValue);
+    await this.updateUserStats();
+    
+    return cards;
+  } catch (error) {
+    console.error('Erreur lors du chargement des cartes depuis Firestore:', error);
+    throw error;
+  }
+}
+```
+
+#### 3. Implémentation de getCardsByUserId
+
+```typescript
+/**
+ * Récupère les cartes d'un utilisateur spécifique avec gestion du cache
+ * @param userId ID de l'utilisateur dont on veut récupérer les cartes
+ * @param forceReload Indique si on doit forcer le rechargement depuis Firebase
+ * @returns Observable émettant les cartes depuis le cache ou chargées depuis Firebase
+ */
+getCardsByUserId(userId: string, forceReload: boolean = false): Observable<PokemonCard[]> {
+  if (forceReload) {
+    // Si le rechargement est forcé, vider le cache d'abord
+    this.clearCache();
+  }
+  
+  // Utiliser getData de BaseCacheService qui gère déjà la logique de cache
+  return this.getData(userId).pipe(
+    map(cards => cards || [])
+  );
+}
+```
+
+#### 4. Adaptation des méthodes CRUD
+
+Les méthodes d'ajout, de suppression et de modification ont été modifiées pour utiliser le cache standardisé et améliorer la gestion des erreurs :
+
+```typescript
+// Méthode pour ajouter une carte avec gestion des erreurs
+async addCard(cardData: Partial<PokemonCard>): Promise<void> {
+  // Sauvegarder l'état actuel du cache pour pouvoir le restaurer en cas d'erreur
+  const previousCards = this.dataSubject.getValue();
+  
+  try {
+    // ... logique existante pour ajouter à Firebase ...
+
+    // Mettre à jour le cache avec la nouvelle carte (en créant une nouvelle instance du tableau)
+    const currentCards = this.dataSubject.getValue() || [];
+    const updatedCards = [newCard, ...currentCards]; // Garantir l'immutabilité
+    this.updateCache(updatedCards);
+    
+    try {
+      // Actions secondaires qui ne doivent pas bloquer l'ajout de la carte
+      await this.updateUserStats();
+      await this.userHistoryService.addHistoryEntry(newCard);
+    } catch (secondaryError) {
+      // Logger l'erreur sans interrompre le flux principal
+      console.warn('Erreur lors des actions secondaires après ajout de carte:', secondaryError);
+    }
+  } catch (error) {
+    // En cas d'erreur, restaurer l'état précédent du cache
+    if (previousCards !== null) {
+      this.updateCache(previousCards);
+    }
+    console.error('Erreur lors de l\'ajout de la carte:', error);
+    throw error;
+  }
+}
+
+// Méthode pour supprimer une carte avec gestion des erreurs
+async removeCard(cardId: string): Promise<void> {
+  // Sauvegarder l'état actuel du cache pour pouvoir le restaurer en cas d'erreur
+  const previousCards = this.dataSubject.getValue();
+  
+  try {
+    // ... logique existante pour supprimer de Firebase ...
+
+    // Mettre à jour le cache (en créant une nouvelle instance du tableau pour l'immutabilité)
+    const currentCards = this.dataSubject.getValue() || [];
+    const updatedCards = currentCards.filter(c => c.id !== cardId);
+    this.updateCache(updatedCards);
+    
+    try {
+      // Actions secondaires qui ne doivent pas bloquer la suppression
+      if (card) {
+        await this.userHistoryService.addDeleteHistoryEntry(card);
+      }
+      await this.updateUserStats();
+    } catch (secondaryError) {
+      // Logger l'erreur sans interrompre le flux principal
+      console.warn('Erreur lors des actions secondaires après suppression de carte:', secondaryError);
+    }
+  } catch (error) {
+    // En cas d'erreur, restaurer l'état précédent du cache
+    if (previousCards !== null) {
+      this.updateCache(previousCards);
+    }
+    console.error('Erreur lors de la suppression de la carte:', error);
+    throw error;
+  }
+}
+
+// Méthode pour mettre à jour une carte avec gestion des erreurs
+async updateCard(cardId: string, cardData: Partial<PokemonCard>): Promise<void> {
+  // Sauvegarder l'état actuel du cache pour pouvoir le restaurer en cas d'erreur
+  const previousCards = this.dataSubject.getValue();
+  
+  try {
+    // ... logique existante pour mettre à jour dans Firebase ...
+    
+    // Mettre à jour le cache (en créant une nouvelle instance du tableau pour l'immutabilité)
+    const currentCards = this.dataSubject.getValue() || [];
+    const updatedIndex = currentCards.findIndex(card => card.id === cardId);
+    
+    if (updatedIndex !== -1) {
+      // Créer une nouvelle instance de la carte mise à jour
+      const updatedCard = {
+        ...currentCards[updatedIndex],
+        ...updatedCardData
+      };
+      
+      // Créer une nouvelle instance du tableau
+      const updatedCards = [
+        ...currentCards.slice(0, updatedIndex),
+        updatedCard,
+        ...currentCards.slice(updatedIndex + 1)
+      ];
+      
+      this.updateCache(updatedCards);
+      
+      try {
+        // Actions secondaires qui ne doivent pas bloquer la mise à jour
+        if (cardData.price !== undefined) {
+          await this.updateUserStats();
+        }
+      } catch (secondaryError) {
+        // Logger l'erreur sans interrompre le flux principal
+        console.warn('Erreur lors des actions secondaires après mise à jour de carte:', secondaryError);
+      }
+    }
+  } catch (error) {
+    // En cas d'erreur, restaurer l'état précédent du cache
+    if (previousCards !== null) {
+      this.updateCache(previousCards);
+    }
+    console.error('Erreur lors de la mise à jour de la carte', error);
+    throw error;
+  }
+}
+```
+
+Les principales améliorations apportées aux méthodes CRUD sont :
+
+1. **Sauvegarde de l'état précédent** : L'état du cache est sauvegardé avant toute modification, permettant une restauration en cas d'erreur.
+
+2. **Gestion robuste des erreurs** : 
+   - Les erreurs principales sont capturées et l'état du cache est restauré
+   - Les erreurs secondaires (actions post-modification) sont gérées séparément pour ne pas bloquer le flux principal
+
+3. **Immutabilité garantie** : Toutes les mises à jour du cache créent explicitement de nouvelles instances des tableaux pour éviter les effets de bord.
+
+4. **Séparation des préoccupations** : 
+   - Les opérations critiques (modification Firebase, mise à jour du cache) sont séparées des opérations secondaires (mise à jour des statistiques, historique)
+   - Les erreurs dans les opérations secondaires ne compromettent pas la cohérence du cache
+
+### Intégration avec le Système d'Authentification
+
+Pour assurer une isolation complète des données entre utilisateurs et éviter les fuites de données, l'intégration avec le système d'authentification a été renforcée :
+
+#### 1. Initialisation de l'écouteur d'authentification
+
+```typescript
+private initAuthenticationListener(): void {
+  // Variable pour stocker l'ID de l'utilisateur précédent
+  let previousUserId: string | null = null;
+  
+  // Écouter les changements d'état d'authentification
+  this.userService.authState$.subscribe(isAuthenticated => {
+    if (isAuthenticated) {
+      const user = this.userService.getCurrentUser();
+      if (user) {
+        // Si l'utilisateur a changé, vider le cache
+        if (previousUserId !== null && previousUserId !== user.id) {
+          console.log('Changement d\'utilisateur détecté, réinitialisation du cache');
+          this.clearCache();
+        }
+        
+        // Mettre à jour l'ID de l'utilisateur précédent
+        previousUserId = user.id;
+        
+        // Charger les cartes via getData qui gère le cache
+        this.getData(user.id);
+      }
+    } else {
+      // Réinitialiser le cache et l'ID de l'utilisateur précédent quand l'utilisateur se déconnecte
+      console.log('Déconnexion détectée, réinitialisation du cache');
+      previousUserId = null;
+      this.clearCache();
+    }
+  });
+}
+```
+
+#### 2. Connexion avec la méthode de déconnexion
+
+Pour garantir que le cache est toujours vidé lors d'une déconnexion, même si l'événement authState n'est pas correctement déclenché, une connexion directe à la méthode logout du UserService a été mise en place :
+
+```typescript
+private connectLogoutToCache(): void {
+  // Méthode originale de déconnexion
+  const originalLogout = this.userService.logout;
+  
+  // Remplacer la méthode de déconnexion par une version qui nettoie également le cache
+  this.userService.logout = async (): Promise<void> => {
+    try {
+      // Vider le cache avant la déconnexion
+      console.log('Déconnexion explicite, nettoyage du cache');
+      this.clearCache();
+      
+      // Appeler la méthode originale de déconnexion
+      return await originalLogout.call(this.userService);
+    } catch (error) {
+      console.error('Erreur lors de la déconnexion avec nettoyage du cache:', error);
+      throw error;
+    }
+  };
+}
+```
+
+#### 3. Vérification de l'intégrité du cache
+
+Une méthode dédiée a été ajoutée pour vérifier qu'aucune donnée d'un utilisateur précédent ne persiste dans le cache :
+
+```typescript
+public verifyCleanCache(currentUserId: string): boolean {
+  // Vérifier si les données en cache appartiennent à l'utilisateur actuel
+  if (this.hasCachedData() && this.cachedUserId !== currentUserId) {
+    console.warn('Données d\'un autre utilisateur détectées dans le cache!');
+    
+    // Nettoyage automatique
+    this.clearCache();
+    return false;
+  }
+  
+  return true;
+}
+```
+
+#### 4. Amélioration de la méthode clearCache
+
+La méthode clearCache a été surchargée pour effectuer des nettoyages supplémentaires spécifiques au CardStorageService :
+
+```typescript
+public override clearCache(): void {
+  // Appeler la méthode de base
+  super.clearCache();
+  
+  // Réinitialiser également la valeur totale
+  this.totalValueSubject.next(0);
+  
+  console.log('Cache vidé avec succès');
+}
+```
+
+### Cycle de Vie du Cache
 
 Le cycle de vie du cache est géré de manière standardisée :
 
@@ -113,28 +437,17 @@ Le cycle de vie du cache est géré de manière standardisée :
 4. **Rechargement forcé :** `reloadData()` force un rechargement des données depuis la source
 5. **Réinitialisation :** `clearCache()` vide le cache et réinitialise l'état
 
-#### Gestion des Erreurs
+### Gestion des Erreurs
 
 La gestion des erreurs est intégrée au cycle de vie du cache :
 
 1. **Erreur de chargement initial :** L'erreur est capturée, logguée et signalée via `errorSubject`
 2. **Erreur lors du rechargement :** Si des données existaient déjà en cache, elles sont conservées
 
-### Tests Unitaires
-
-Une suite complète de tests unitaires a été créée dans `src/app/services/base-cache.service.spec.ts` pour valider le comportement du cache :
-
-- **Initialisation :** Vérification que le cache est initialement vide
-- **Chargement :** Test du chargement des données depuis la source
-- **Utilisation du cache :** Vérification que les requêtes suivantes utilisent le cache
-- **Rechargement :** Test du rechargement forcé des données
-- **Réinitialisation :** Vérification que le cache peut être vidé
-- **Gestion des erreurs :** Test des scénarios d'erreur de chargement et de rechargement
-
 ### Prochaines Étapes
 
-Les prochaines étapes de l'implémentation (Phase 2) consisteront à :
+Les prochaines étapes de l'implémentation (Phase 3) consisteront à :
 
-1. Refactorer CardStorageService pour étendre BaseCacheService et implémenter la méthode fetchFromSource
-2. Optimiser les méthodes d'ajout, de suppression et de modification des cartes pour mettre à jour le cache
-3. Intégrer la réinitialisation du cache au processus de déconnexion 
+1. Étendre le pattern de cache aux autres services: UserService, HistoryService et CollectionHistoryService
+2. Optimiser les interactions entre les services pour minimiser les rechargements
+3. Améliorer la gestion des erreurs et les mécanismes de repli 

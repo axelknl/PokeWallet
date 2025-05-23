@@ -39,27 +39,27 @@
 
 ### Phase 2: Implémentation du Cache pour CardStorageService
 
-**Tâche 2.1: Refactoring initial du CardStorageService**
+**Tâche 2.1: Refactoring initial du CardStorageService** ✅
 - Ajouter les propriétés BehaviorSubject et Observable publique
 - Implémenter le suivi de l'ID utilisateur pour le cache
 - Ajouter la méthode de réinitialisation du cache
 
-**Tâche 2.2: Implémentation de la récupération avec cache**
+**Tâche 2.2: Implémentation de la récupération avec cache** ✅
 - Modifier getCardsByUserId pour vérifier d'abord le cache
 - Implémenter la logique de chargement depuis Firebase si nécessaire
 - Mettre à jour le BehaviorSubject avec les données récupérées
 
-**Tâche 2.3: Implémentation de l'ajout avec mise à jour du cache**
+**Tâche 2.3: Implémentation de l'ajout avec mise à jour du cache** ✅
 - Modifier addCard pour mettre à jour Firebase puis le cache
 - Implémenter la gestion d'erreur avec restauration de l'état précédent
 - Assurer la création d'une nouvelle instance du tableau pour l'immutabilité
 
-**Tâche 2.4: Implémentation de la suppression/modification avec mise à jour du cache**
-- Modifier deleteCard et updateCard pour mettre à jour le cache après Firebase
+**Tâche 2.4: Implémentation de la suppression/modification avec mise à jour du cache** ✅
+- Modifier deleteCard, updateCard et sellCard pour mettre à jour le cache après Firebase
 - Implémenter la sauvegarde de l'état précédent pour le rollback en cas d'erreur
 - Assurer la création de nouvelles instances pour l'immutabilité
 
-**Tâche 2.5: Intégration avec le service d'authentification**
+**Tâche 2.5: Intégration avec le service d'authentification** ✅
 - Connecter clearCache au processus de déconnexion
 - S'assurer que le cache est vidé lors du changement d'utilisateur
 - Vérifier qu'aucune donnée de l'utilisateur précédent ne persiste

@@ -60,14 +60,20 @@ export class HomePage implements OnInit, OnDestroy {
   ngOnInit() {
     // S'abonner aux changements des cartes
     this.cardsSubscription = this.cardStorage.cards$.subscribe(cards => {
-      this.hasCards = cards.length > 0;
-      if (cards.length > 0) {
-        this.recentCards = cards.slice(0, 3);
-        this.mostExpensiveCard = cards.reduce(
-          (max: PokemonCard, card: PokemonCard) => card.price > max.price ? card : max, 
-          cards[0]
-        );
+      if (cards) {
+        this.hasCards = cards.length > 0;
+        if (cards.length > 0) {
+          this.recentCards = cards.slice(0, 3);
+          this.mostExpensiveCard = cards.reduce(
+            (max: PokemonCard, card: PokemonCard) => card.price > max.price ? card : max, 
+            cards[0]
+          );
+        } else {
+          this.recentCards = [];
+          this.mostExpensiveCard = null;
+        }
       } else {
+        this.hasCards = false;
         this.recentCards = [];
         this.mostExpensiveCard = null;
       }
