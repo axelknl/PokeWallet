@@ -450,4 +450,131 @@ Les prochaines étapes de l'implémentation (Phase 3) consisteront à :
 
 1. Étendre le pattern de cache aux autres services: UserService, HistoryService et CollectionHistoryService
 2. Optimiser les interactions entre les services pour minimiser les rechargements
-3. Améliorer la gestion des erreurs et les mécanismes de repli 
+3. Améliorer la gestion des erreurs et les mécanismes de repli
+
+## Service d'Historique (HistoryService)
+
+### Vue d'ensemble
+Le `HistoryService` étend `BaseCacheService<HistoryItem[]>` pour fournir une gestion efficace de l'historique des actions sur les cartes Pokémon avec mise en cache.
+
+### Fonctionnalités principales
+
+#### Gestion du Cache
+- Mise en cache automatique des données d'historique après la première récupération
+- Réutilisation des données en cache pour les requêtes suivantes
+- Invalidation du cache lors de la déconnexion ou du changement d'utilisateur
+
+#### Opérations sur l'Historique
+- `addHistoryEntry`: Ajoute une entrée pour une nouvelle carte
+- `addSaleHistoryEntry`: Enregistre la vente d'une carte avec calcul du profit
+- `addDeleteHistoryEntry`: Enregistre la suppression d'une carte
+
+### Implémentation du Cache
+
+```typescript
+export class HistoryService extends BaseCacheService<HistoryItem[]> {
+  protected async fetchFromSource(userId: string): Promise<HistoryItem[]> {
+    // Récupération des données depuis Firestore
+    // Conversion des timestamps
+    // Retourne les données formatées
+  }
+}
+```
+
+### Gestion des Erreurs
+- Gestion des erreurs de chargement avec état d'erreur observable
+- Restauration automatique de l'état précédent en cas d'erreur
+- Nettoyage du cache lors de la déconnexion
+
+### Performances
+- Réduction des appels à Firestore grâce au cache
+- Mise à jour optimiste du cache pour une meilleure réactivité
+- Gestion efficace des dates avec conversion Timestamp
+
+### Utilisation
+
+```typescript
+// Récupération de l'historique
+const history = await historyService.getData(userId);
+
+// Ajout d'une entrée
+await historyService.addHistoryEntry(card);
+
+// Enregistrement d'une vente
+await historyService.addSaleHistoryEntry(card, salePrice);
+
+// Suppression d'une carte
+await historyService.addDeleteHistoryEntry(card);
+```
+
+### Tests
+Le service est couvert par des tests unitaires complets vérifiant :
+- Le chargement initial depuis Firestore
+- L'utilisation du cache pour les requêtes suivantes
+- La gestion des erreurs
+- Les opérations sur l'historique
+- Le calcul du profit lors des ventes 
+
+## Service d'Historique de Collection (CollectionHistoryService)
+
+### Vue d'ensemble
+Le `CollectionHistoryService` étend `BaseCacheService<CollectionValueHistory[]>` pour fournir une gestion efficace de l'historique des valeurs de collection avec mise en cache.
+
+### Fonctionnalités principales
+
+#### Gestion du Cache
+- Mise en cache automatique des données d'historique après la première récupération
+- Réutilisation des données en cache pour les requêtes suivantes
+- Invalidation du cache lors de la déconnexion ou du changement d'utilisateur
+
+#### Opérations sur l'Historique de Collection
+- `loadCollectionHistory`: Charge l'historique pour l'utilisateur actuel
+- `addCollectionHistoryEntry`: Ajoute ou met à jour une entrée pour une date donnée
+- `initializeHistoryIfNeeded`: Initialise l'historique si aucune entrée n'existe
+- `getFormattedChartData`: Formate les données pour Chart.js
+
+### Implémentation du Cache
+
+```typescript
+export class CollectionHistoryService extends BaseCacheService<CollectionValueHistory[]> {
+  
+  // Implémentation de la méthode abstraite
+  protected async fetchFromSource(userId: string): Promise<CollectionValueHistory[]> {
+    const historyCollection = collection(this.firestore, 'collectionHistory');
+    const historyQuery = query(
+      historyCollection, 
+      where('userId', '==', userId),
+      orderBy('date', 'asc')
+    );
+    
+    const snapshot = await getDocs(historyQuery);
+    return snapshot.docs.map(doc => /* transformation des données */);
+  }
+  
+  // Méthodes de gestion de l'historique avec mise à jour du cache
+  async addCollectionHistoryEntry(value: number): Promise<void> {
+    // 1. Sauvegarder dans Firebase
+    // 2. Recharger le cache
+    await this.reloadData();
+  }
+}
+```
+
+### Stratégie d'Optimisation
+1. **Récupération unique**: Premier chargement depuis Firestore
+2. **Cache en mémoire**: Stockage dans BehaviorSubject
+3. **Mise à jour optimiste**: Rechargement du cache après modification
+4. **Formatage à la demande**: Transformation des données pour les graphiques
+
+### Gestion des Erreurs
+- Logging automatique des erreurs de chargement
+- Préservation du cache en cas d'erreur de rechargement
+- Interface d'erreur unifiée via `hasError$` Observable
+
+### Tests
+Le service est couvert par des tests unitaires complets vérifiant :
+- Le chargement initial depuis Firestore
+- L'utilisation du cache pour les requêtes suivantes
+- La gestion des erreurs
+- Les opérations sur l'historique
+- Le calcul du profit lors des ventes 

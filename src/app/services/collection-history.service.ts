@@ -10,38 +10,32 @@ import {
   deleteDoc,
   doc,
   Timestamp,
-  limit,
-  serverTimestamp
+  limit
 } from '@angular/fire/firestore';
 import { UserService } from './user.service';
 import { CollectionValueHistory } from '../interfaces/collection-value-history.interface';
-import { BehaviorSubject, Observable } from 'rxjs';
 import { formatDate } from '@angular/common';
+import { BaseCacheService } from './base-cache.service';
 
 @Injectable({
   providedIn: 'root'
 })
-export class CollectionHistoryService {
-  private historySubject = new BehaviorSubject<CollectionValueHistory[]>([]);
-  public history$ = this.historySubject.asObservable();
+export class CollectionHistoryService extends BaseCacheService<CollectionValueHistory[]> {
   
   constructor(
     private firestore: Firestore,
     private userService: UserService
-  ) { }
+  ) {
+    super();
+  }
 
   /**
-   * Charge l'historique de valeur de la collection pour l'utilisateur actuel
+   * Implémente la méthode abstraite pour charger les données depuis Firebase
+   * @param userId ID de l'utilisateur
+   * @returns Promise avec l'historique de collection
    */
-  async loadCollectionHistory(): Promise<void> {
+  protected async fetchFromSource(userId: string): Promise<CollectionValueHistory[]> {
     try {
-      const currentUser = this.userService.getCurrentUser();
-      if (!currentUser) {
-        this.historySubject.next([]);
-        return;
-      }
-
-      const userId = currentUser.id;
       const historyCollection = collection(this.firestore, 'collectionHistory');
       const historyQuery = query(
         historyCollection, 
@@ -61,11 +55,34 @@ export class CollectionHistoryService {
         } as CollectionValueHistory;
       });
 
-      this.historySubject.next(history);
+      return history;
     } catch (error) {
       console.error('Erreur lors du chargement de l\'historique de collection:', error);
-      this.historySubject.next([]);
+      throw error;
     }
+  }
+
+  /**
+   * Méthode utilitaire pour ajouter des données à Firestore
+   * @param data Données à ajouter
+   */
+  private async addToFirestore(data: Omit<CollectionValueHistory, 'id'>): Promise<void> {
+    const historyCollection = collection(this.firestore, 'collectionHistory');
+    await addDoc(historyCollection, data);
+  }
+
+  /**
+   * Charge l'historique de valeur de la collection pour l'utilisateur actuel
+   */
+  async loadCollectionHistory(): Promise<void> {
+    const currentUser = this.userService.getCurrentUser();
+    if (!currentUser) {
+      this.updateCache([]);
+      return;
+    }
+
+    // Utiliser la méthode getData du cache
+    this.getData(currentUser.id).subscribe();
   }
 
   /**
@@ -84,31 +101,21 @@ export class CollectionHistoryService {
       // Mettre l'heure à minuit pour comparer uniquement les dates
       today.setHours(0, 0, 0, 0);
       
-      // Charger l'historique actuel
-      const historyCollection = collection(this.firestore, 'collectionHistory');
-      const historyQuery = query(
-        historyCollection, 
-        where('userId', '==', userId),
-        orderBy('date', 'desc'),
-        limit(1)
-      );
+      // Charger l'historique actuel si nécessaire
+      await this.getData(userId);
+      const currentHistory = this.dataSubject.getValue() || [];
       
-      const snapshot = await getDocs(historyQuery);
-      
-      if (!snapshot.empty) {
-        // Vérifier si la dernière entrée est d'aujourd'hui
-        const lastEntry = snapshot.docs[0];
-        const lastEntryData = lastEntry.data() as any;
-        const lastDate = lastEntryData.date instanceof Timestamp 
-          ? lastEntryData.date.toDate() 
-          : new Date(lastEntryData.date);
-        
-        // Réinitialiser l'heure à minuit pour comparer uniquement les dates
-        lastDate.setHours(0, 0, 0, 0);
-        
-        if (lastDate.getTime() === today.getTime()) {
-          // Mettre à jour l'entrée d'aujourd'hui
-          await deleteDoc(doc(this.firestore, 'collectionHistory', lastEntry.id));
+      // Vérifier si une entrée existe déjà pour aujourd'hui
+      const todayEntry = currentHistory.find(entry => {
+        const entryDate = new Date(entry.date);
+        entryDate.setHours(0, 0, 0, 0);
+        return entryDate.getTime() === today.getTime();
+      });
+
+      if (todayEntry) {
+        // Supprimer l'ancienne entrée de Firestore
+        if (todayEntry.id) {
+          await deleteDoc(doc(this.firestore, 'collectionHistory', todayEntry.id));
         }
       }
       
@@ -119,12 +126,28 @@ export class CollectionHistoryService {
         value
       };
       
-      await addDoc(historyCollection, historyEntry);
+      await this.addToFirestore(historyEntry);
       
-      // Recharger l'historique
-      await this.loadCollectionHistory();
+      // Mettre à jour le cache en recréant la liste mise à jour
+      let updatedHistory = currentHistory.filter(entry => {
+        const entryDate = new Date(entry.date);
+        entryDate.setHours(0, 0, 0, 0);
+        return entryDate.getTime() !== today.getTime();
+      });
+      
+      // Ajouter la nouvelle entrée (avec un ID temporaire car on ne connaît pas l'ID Firestore)
+      const newEntry: CollectionValueHistory = {
+        id: `temp-${Date.now()}`,
+        ...historyEntry
+      };
+      
+      updatedHistory.push(newEntry);
+      updatedHistory.sort((a, b) => a.date.getTime() - b.date.getTime());
+      
+      this.updateCache(updatedHistory);
     } catch (error) {
       console.error('Erreur lors de l\'ajout d\'une entrée d\'historique:', error);
+      throw error;
     }
   }
 
@@ -138,13 +161,13 @@ export class CollectionHistoryService {
       if (!currentUser) return;
 
       const userId = currentUser.id;
-      const historyCollection = collection(this.firestore, 'collectionHistory');
-      const historyQuery = query(historyCollection, where('userId', '==', userId), limit(1));
       
-      const snapshot = await getDocs(historyQuery);
+      // Charger l'historique actuel
+      await this.getData(userId);
+      const currentHistory = this.dataSubject.getValue() || [];
       
       // Si aucune entrée n'existe, créer une entrée initiale
-      if (snapshot.empty) {
+      if (currentHistory.length === 0) {
         const today = new Date();
         today.setHours(0, 0, 0, 0);
         
@@ -154,10 +177,15 @@ export class CollectionHistoryService {
           value: currentValue
         };
         
-        await addDoc(historyCollection, historyEntry);
+        await this.addToFirestore(historyEntry);
         
-        // Recharger l'historique
-        await this.loadCollectionHistory();
+        // Mettre à jour le cache avec la nouvelle entrée
+        const newEntry: CollectionValueHistory = {
+          id: `temp-${Date.now()}`,
+          ...historyEntry
+        };
+        
+        this.updateCache([newEntry]);
       }
     } catch (error) {
       console.error('Erreur lors de l\'initialisation de l\'historique:', error);
@@ -169,14 +197,25 @@ export class CollectionHistoryService {
    * @returns Données formatées pour Chart.js
    */
   getFormattedChartData(): { labels: string[], values: number[] } {
-    const history = this.historySubject.getValue();
+    const history = this.dataSubject.getValue() || [];
     
-    const labels = history.map(entry => 
-      formatDate(entry.date, 'dd/MM/yy', 'fr-FR')
-    );
+    const labels = history.map(entry => {
+      const date = new Date(entry.date);
+      const day = date.getDate().toString().padStart(2, '0');
+      const month = (date.getMonth() + 1).toString().padStart(2, '0');
+      const year = date.getFullYear().toString().slice(-2);
+      return `${day}/${month}/${year}`;
+    });
 
     const values = history.map(entry => entry.value);
     
     return { labels, values };
+  }
+
+  /**
+   * Alias pour la compatibilité avec l'ancienne interface
+   */
+  get history$() {
+    return this.data$;
   }
 } 

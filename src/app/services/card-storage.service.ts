@@ -61,7 +61,7 @@ export class CardStorageService extends BaseCacheService<PokemonCard[]> {
     // S'abonner aux changements du cache pour calculer la valeur totale
     this.data$.subscribe(cards => {
       if (cards) {
-        const totalValue = cards.reduce((sum, card) => sum + card.price, 0);
+        const totalValue = cards.reduce((sum, card) => sum + (card.price || 0), 0);
         this.totalValueSubject.next(totalValue);
       } else {
         this.totalValueSubject.next(0);
@@ -192,7 +192,7 @@ export class CardStorageService extends BaseCacheService<PokemonCard[]> {
       });
 
       // Une fois les cartes chargées, initialiser l'historique si nécessaire
-      const totalValue = cards.reduce((sum, card) => sum + card.price, 0);
+      const totalValue = cards.reduce((sum, card) => sum + (card.price || 0), 0);
       await this.historyService.initializeHistoryIfNeeded(totalValue);
       
       // Mettre à jour les statistiques de l'utilisateur
@@ -462,7 +462,7 @@ export class CardStorageService extends BaseCacheService<PokemonCard[]> {
     if (cards.length === 0) return null;
     
     return cards.reduce((max, card) => 
-      card.price > max.price ? card : max
+      (card.price || 0) > (max.price || 0) ? card : max
     );
   }
 

@@ -32,11 +32,27 @@ import {
   orderBy,
   limit
 } from '@angular/fire/firestore';
+import { BaseCacheService } from './base-cache.service';
 
+/**
+ * Service de gestion des utilisateurs avec mise en cache
+ * Étend BaseCacheService pour implémenter un système de cache efficace
+ * 
+ * Le service gère :
+ * - L'authentification des utilisateurs
+ * - La gestion des profils utilisateurs
+ * - La mise en cache des données utilisateur
+ * - La synchronisation avec Firestore
+ * 
+ * Le cache est automatiquement :
+ * - Mis à jour lors des modifications de données
+ * - Vidé lors de la déconnexion
+ * - Rechargé lors de la reconnexion
+ */
 @Injectable({
   providedIn: 'root'
 })
-export class UserService {
+export class UserService extends BaseCacheService<User> {
   private readonly USER_STORAGE_KEY = 'current_user';
   private currentUser: User | null = null;
   private authState = new BehaviorSubject<boolean>(false);
@@ -46,10 +62,16 @@ export class UserService {
   public user$ = user(this.auth);
   private router = inject(Router);
 
+  // Alias pour compatibilité avec le code existant
+  public get currentUserData$(): Observable<User | null> {
+    return this.data$;
+  }
+
   constructor(
     private auth: Auth,
     private firestore: Firestore
   ) {
+    super();
     this.initializeUser();
     
     // Observer les changements d'état d'authentification
@@ -60,11 +82,12 @@ export class UserService {
       this.authChecked.next(true);
       
       if (user) {
-        // Si l'utilisateur est connecté, charger ses données
-        this.loadUserData(user.uid);
+        // Si l'utilisateur est connecté, charger ses données via le cache
+        this.loadUserDataWithCache(user.uid);
       } else {
-        // Si l'utilisateur est déconnecté, réinitialiser les données
+        // Si l'utilisateur est déconnecté, réinitialiser les données et le cache
         this.currentUser = null;
+        this.clearCache();
         
         // Si nous sommes sur une page protégée et que l'utilisateur
         // est déconnecté, rediriger vers login
@@ -81,7 +104,7 @@ export class UserService {
   private async initializeUser(): Promise<void> {
     const user = this.auth.currentUser;
     if (user) {
-      await this.loadUserData(user.uid);
+      this.loadUserDataWithCache(user.uid);
       this.authState.next(true);
     }
     // Indiquer que la vérification initiale est terminée
@@ -98,111 +121,6 @@ export class UserService {
         resolve(this.isAuthenticated());
       });
     });
-  }
-
-  // Charger les données utilisateur depuis Firestore
-  private async loadUserData(userId: string): Promise<void> {
-    try {
-      const userDoc = await getDoc(doc(this.firestore, 'users', userId));
-      
-      if (userDoc.exists()) {
-        let userData = userDoc.data() as FirestoreUser;
-        
-        // Vérifier si toutes les propriétés requises sont présentes
-        const requiredFields = ['username', 'email', 'createdAt', 'avatarUrl', 'totalCards', 'collectionValue', 'totalProfit', 'isProfilPublic'];
-        const missingFields = requiredFields.filter(field => {
-          return userData[field as keyof FirestoreUser] === undefined;
-        });
-        
-        if (missingFields.length > 0) {
-          console.warn(`Données utilisateur incomplètes, champs manquants: ${missingFields.join(', ')}`);
-          
-          // Récupérer les informations de l'utilisateur Firebase
-          const firebaseUser = this.auth.currentUser;
-          
-          // Compléter les données manquantes
-          const updatedData: Partial<User> = {};
-          
-          if (!userData.username && firebaseUser?.displayName) {
-            updatedData.username = firebaseUser.displayName;
-          } else if (!userData.username) {
-            updatedData.username = 'Utilisateur';
-          }
-          
-          if (!userData.email && firebaseUser?.email) {
-            updatedData.email = firebaseUser.email;
-          }
-          
-          if (!userData.avatarUrl && firebaseUser?.photoURL) {
-            updatedData.avatarUrl = firebaseUser.photoURL;
-          } else if (!userData.avatarUrl) {
-            updatedData.avatarUrl = 'https://ionicframework.com/docs/img/demos/avatar.svg';
-          }
-          
-          if (!userData.createdAt) {
-            updatedData.createdAt = new Date();
-          }
-          
-          if (userData.totalCards === undefined) {
-            updatedData.totalCards = 0;
-          }
-          
-          if (userData.collectionValue === undefined) {
-            updatedData.collectionValue = 0;
-          }
-          
-          if (userData.totalProfit === undefined) {
-            updatedData.totalProfit = 0;
-          }
-          
-          if (userData.isProfilPublic === undefined) {
-            updatedData.isProfilPublic = true;
-          }
-          
-          // Mettre à jour le document utilisateur avec les champs manquants
-          if (Object.keys(updatedData).length > 0) {
-            await setDoc(doc(this.firestore, 'users', userId), updatedData, { merge: true });
-            
-            // Récupérer les données utilisateur mises à jour
-            const updatedUserDoc = await getDoc(doc(this.firestore, 'users', userId));
-            if (updatedUserDoc.exists()) {
-              userData = updatedUserDoc.data() as FirestoreUser;
-            }
-          }
-        }
-        
-        // Convertir les timestamps en dates
-        this.currentUser = {
-          ...userData as User,
-          createdAt: userData.createdAt instanceof Timestamp ? userData.createdAt.toDate() : userData.createdAt as Date,
-          lastLoginAt: userData.lastLoginAt instanceof Timestamp ? userData.lastLoginAt.toDate() : userData.lastLoginAt as Date
-        };
-      } else {
-        console.warn('Aucun document utilisateur trouvé dans Firestore');
-        
-        // Créer un document utilisateur par défaut si aucun n'existe
-        const firebaseUser = this.auth.currentUser;
-        if (firebaseUser) {
-          const defaultUserData: User = {
-            id: userId,
-            username: firebaseUser.displayName || 'Utilisateur',
-            email: firebaseUser.email || '',
-            createdAt: new Date(),
-            lastLoginAt: new Date(),
-            avatarUrl: firebaseUser.photoURL || 'https://ionicframework.com/docs/img/demos/avatar.svg',
-            totalCards: 0,
-            collectionValue: 0,
-            totalProfit: 0,
-            isProfilPublic: true
-          };
-          
-          await setDoc(doc(this.firestore, 'users', userId), defaultUserData);
-          this.currentUser = defaultUserData;
-        }
-      }
-    } catch (error) {
-      console.error('Erreur lors du chargement des données utilisateur:', error);
-    }
   }
 
   // Connexion avec email et mot de passe
@@ -239,8 +157,8 @@ export class UserService {
         await setDoc(doc(this.firestore, 'users', userId), userData);
       }
       
-      // Charger les données utilisateur mises à jour
-      await this.loadUserData(userId);
+      // Charger les données utilisateur via le cache
+      this.loadUserDataWithCache(userId);
       this.authState.next(true);
       
 
@@ -330,8 +248,15 @@ export class UserService {
         
         // Vérifier d'abord que nous avons les données utilisateur complètes
         if (!this.currentUser) {
-          // Si currentUser est null, charger les données utilisateur d'abord
-          await this.loadUserData(userId);
+          // Si currentUser est null, charger les données utilisateur via le cache
+          this.loadUserDataWithCache(userId);
+          // Attendre que les données soient chargées
+          await new Promise<void>((resolve) => {
+            this.data$.pipe(
+              filter(user => user !== null),
+              take(1)
+            ).subscribe(() => resolve());
+          });
         }
         
         // S'assurer que toutes les propriétés requises sont préservées
@@ -342,12 +267,14 @@ export class UserService {
         // Utiliser updateDoc pour ne mettre à jour que les champs fournis sans écraser les autres
         await updateDoc(doc(this.firestore, 'users', userId), newData);
         
-        // Mettre à jour l'objet currentUser localement
-    if (this.currentUser) {
-      this.currentUser = {
-        ...this.currentUser,
+        // Mettre à jour l'objet currentUser localement et le cache
+        if (this.currentUser) {
+          const updatedUser = {
+            ...this.currentUser,
             ...userData
           };
+          this.currentUser = updatedUser;
+          this.updateCache(updatedUser);
         }
         
       } catch (error) {
@@ -380,10 +307,15 @@ export class UserService {
       // Mettre à jour les statistiques dans Firestore
       await updateDoc(doc(this.firestore, 'users', userId), stats);
       
-      // Mettre à jour l'objet currentUser localement
+      // Mettre à jour l'objet currentUser localement et le cache
       if (this.currentUser) {
-        this.currentUser.totalCards = stats.totalCards;
-        this.currentUser.collectionValue = stats.collectionValue;
+        const updatedUser = {
+          ...this.currentUser,
+          totalCards: stats.totalCards,
+          collectionValue: stats.collectionValue
+        };
+        this.currentUser = updatedUser;
+        this.updateCache(updatedUser);
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour des statistiques:', error);
@@ -408,9 +340,14 @@ export class UserService {
       // Mettre à jour l'avatar dans Firestore
       await updateDoc(doc(this.firestore, 'users', userId), { avatarUrl });
       
-      // Mettre à jour l'objet currentUser localement
-    if (this.currentUser) {
-        this.currentUser.avatarUrl = avatarUrl;
+      // Mettre à jour l'objet currentUser localement et le cache
+      if (this.currentUser) {
+        const updatedUser = {
+          ...this.currentUser,
+          avatarUrl: avatarUrl
+        };
+        this.currentUser = updatedUser;
+        this.updateCache(updatedUser);
       }
     } catch (error) {
       console.error('Erreur lors de la mise à jour de l\'avatar:', error);
@@ -445,11 +382,14 @@ export class UserService {
       const userDocRef = doc(this.firestore, 'users', currentUser.id);
       await updateDoc(userDocRef, { totalProfit: newTotalProfit });
 
-      // Mettre à jour dans le currentUser
-      this.currentUser = {
+      // Mettre à jour dans le currentUser et le cache
+      const updatedUser = {
         ...currentUser,
         totalProfit: newTotalProfit
       };
+      this.currentUser = updatedUser;
+      this.updateCache(updatedUser);
+      
       console.log('totalProfit mis à jour avec succès:', this.currentUser);
     } catch (error) {
       console.error('Erreur lors de la mise à jour du cumul des gains/pertes:', error);
@@ -472,11 +412,13 @@ export class UserService {
       const userDocRef = doc(this.firestore, 'users', currentUser.id);
       await updateDoc(userDocRef, { isProfilePublic: isPublic });
 
-      // Mettre à jour dans le currentUser
-      this.currentUser = {
+      // Mettre à jour dans le currentUser et le cache
+      const updatedUser = {
         ...currentUser,
         isProfilPublic: isPublic
       };
+      this.currentUser = updatedUser;
+      this.updateCache(updatedUser);
       
     } catch (error) {
       console.error('Erreur lors de la mise à jour de la visibilité du profil:', error);
@@ -522,11 +464,13 @@ export class UserService {
         });
       }
 
-      // Mettre à jour le currentUser
-      this.currentUser = {
+      // Mettre à jour dans le currentUser et le cache
+      const updatedUser = {
         ...currentUser,
         ...updateData
       };
+      this.currentUser = updatedUser;
+      this.updateCache(updatedUser);
       
     } catch (error) {
       console.error('Erreur lors de la mise à jour du profil:', error);
@@ -797,6 +741,136 @@ export class UserService {
     } catch (error) {
       console.error('Erreur lors de la suppression d\'un ami:', error);
       throw new Error('Impossible de supprimer cet ami');
+    }
+  }
+
+  /**
+   * Charge les données utilisateur avec cache
+   * @param userId ID de l'utilisateur
+   */
+  private loadUserDataWithCache(userId: string): void {
+    // Utiliser la méthode getData de BaseCacheService qui gère le cache
+    this.getData(userId).subscribe(user => {
+      if (user) {
+        this.currentUser = user;
+      }
+    });
+  }
+
+  /**
+   * Implémentation de la méthode abstraite fetchFromSource
+   * Récupère les données utilisateur depuis Firestore
+   */
+  protected override async fetchFromSource(userId: string): Promise<User> {
+    try {
+      const userDoc = await getDoc(doc(this.firestore, 'users', userId));
+      
+      if (userDoc.exists()) {
+        let userData = userDoc.data() as FirestoreUser;
+        
+        // Vérifier si toutes les propriétés requises sont présentes
+        const requiredFields = ['username', 'email', 'createdAt', 'avatarUrl', 'totalCards', 'collectionValue', 'totalProfit', 'isProfilPublic'];
+        const missingFields = requiredFields.filter(field => {
+          return userData[field as keyof FirestoreUser] === undefined;
+        });
+        
+        if (missingFields.length > 0) {
+          console.warn(`Données utilisateur incomplètes, champs manquants: ${missingFields.join(', ')}`);
+          
+          // Récupérer les informations de l'utilisateur Firebase
+          const firebaseUser = this.auth.currentUser;
+          
+          // Compléter les données manquantes
+          const updatedData: Partial<User> = {};
+          
+          if (!userData.username && firebaseUser?.displayName) {
+            updatedData.username = firebaseUser.displayName;
+          } else if (!userData.username) {
+            updatedData.username = 'Utilisateur';
+          }
+          
+          if (!userData.email && firebaseUser?.email) {
+            updatedData.email = firebaseUser.email;
+          }
+          
+          if (!userData.avatarUrl && firebaseUser?.photoURL) {
+            updatedData.avatarUrl = firebaseUser.photoURL;
+          } else if (!userData.avatarUrl) {
+            updatedData.avatarUrl = 'https://ionicframework.com/docs/img/demos/avatar.svg';
+          }
+          
+          if (!userData.createdAt) {
+            updatedData.createdAt = new Date();
+          }
+          
+          if (userData.totalCards === undefined) {
+            updatedData.totalCards = 0;
+          }
+          
+          if (userData.collectionValue === undefined) {
+            updatedData.collectionValue = 0;
+          }
+          
+          if (userData.totalProfit === undefined) {
+            updatedData.totalProfit = 0;
+          }
+          
+          if (userData.isProfilPublic === undefined) {
+            updatedData.isProfilPublic = true;
+          }
+          
+          // Mettre à jour le document utilisateur avec les champs manquants
+          if (Object.keys(updatedData).length > 0) {
+            await setDoc(doc(this.firestore, 'users', userId), updatedData, { merge: true });
+            
+            // Récupérer les données utilisateur mises à jour
+            const updatedUserDoc = await getDoc(doc(this.firestore, 'users', userId));
+            if (updatedUserDoc.exists()) {
+              userData = updatedUserDoc.data() as FirestoreUser;
+            }
+          }
+        }
+        
+        // Convertir les timestamps en dates et retourner l'utilisateur
+        const user: User = {
+          ...userData as User,
+          createdAt: userData.createdAt instanceof Timestamp ? userData.createdAt.toDate() : userData.createdAt as Date,
+          lastLoginAt: userData.lastLoginAt instanceof Timestamp ? userData.lastLoginAt.toDate() : userData.lastLoginAt as Date
+        };
+        
+        // Mettre à jour currentUser pour la compatibilité
+        this.currentUser = user;
+        
+        return user;
+      } else {
+        console.warn('Aucun document utilisateur trouvé dans Firestore');
+        
+        // Créer un document utilisateur par défaut si aucun n'existe
+        const firebaseUser = this.auth.currentUser;
+        if (firebaseUser) {
+          const defaultUserData: User = {
+            id: userId,
+            username: firebaseUser.displayName || 'Utilisateur',
+            email: firebaseUser.email || '',
+            createdAt: new Date(),
+            lastLoginAt: new Date(),
+            avatarUrl: firebaseUser.photoURL || 'https://ionicframework.com/docs/img/demos/avatar.svg',
+            totalCards: 0,
+            collectionValue: 0,
+            totalProfit: 0,
+            isProfilPublic: true
+          };
+          
+          await setDoc(doc(this.firestore, 'users', userId), defaultUserData);
+          this.currentUser = defaultUserData;
+          return defaultUserData;
+        } else {
+          throw new Error('Aucun utilisateur Firebase connecté pour créer le document');
+        }
+      }
+    } catch (error) {
+      console.error('Erreur lors de la récupération des données utilisateur:', error);
+      throw error;
     }
   }
 } 

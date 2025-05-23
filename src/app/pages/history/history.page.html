@@ -9,34 +9,24 @@
     <ion-refresher-content></ion-refresher-content>
   </ion-refresher>
   
-  <!-- Sélecteur de période -->
-  <ion-card class="period-selector-card">
+  <!-- Message d'erreur -->
+  <ion-card *ngIf="hasError" color="danger">
+    <ion-card-header>
+      <ion-card-title>
+        <ion-icon name="alert-circle-outline"></ion-icon>
+        Erreur
+      </ion-card-title>
+    </ion-card-header>
     <ion-card-content>
-      <div class="period-selector-container">
-        <ion-select 
-          label="Période" 
-          labelPlacement="stacked" 
-          [(ngModel)]="selectedPeriod" 
-          interface="popover"
-          class="period-select">
-          <ion-select-option *ngFor="let option of periodOptions" [value]="option.value">
-            {{ option.label }}
-          </ion-select-option>
-        </ion-select>
-        
-        <ion-button 
-          (click)="searchWithPeriod()" 
-          class="search-button"
-          [disabled]="loading">
-          <ion-icon name="search-outline" slot="start"></ion-icon>
-          Rechercher
-        </ion-button>
-      </div>
+      Une erreur est survenue lors du chargement de l'historique.
+      <ion-button fill="clear" (click)="loadHistory()">
+        Réessayer
+      </ion-button>
     </ion-card-content>
   </ion-card>
   
   <!-- Affichage des éléments d'historique -->
-  <ng-container *ngIf="!loading; else loadingTemplate">
+  <ng-container *ngIf="!loading && !hasError; else loadingTemplate">
     <div *ngIf="historyItems.length > 0; else noItems">
       <ion-accordion-group>
         <ion-accordion *ngFor="let item of historyItems" class="history-accordion">
@@ -113,15 +103,10 @@
   
   <!-- Template de chargement -->
   <ng-template #loadingTemplate>
-    <ion-card *ngFor="let i of [1, 2, 3, 4, 5]">
-      <ion-card-header>
-        <ion-skeleton-text [animated]="true" style="width: 60%"></ion-skeleton-text>
-      </ion-card-header>
-      <ion-card-content>
-        <ion-skeleton-text [animated]="true" style="width: 80%"></ion-skeleton-text>
-        <ion-skeleton-text [animated]="true" style="width: 40%"></ion-skeleton-text>
-      </ion-card-content>
-    </ion-card>
+    <div class="loading-container">
+      <ion-spinner name="circular"></ion-spinner>
+      <p>Chargement de l'historique...</p>
+    </div>
   </ng-template>
   
   <!-- Template pour aucun élément -->
@@ -131,7 +116,7 @@
         <ion-card-title>Aucun historique</ion-card-title>
       </ion-card-header>
       <ion-card-content>
-        <p>Aucun historique trouvé pour la période sélectionnée.</p>
+        <p>Aucune action n'a été enregistrée dans l'historique.</p>
       </ion-card-content>
     </ion-card>
   </ng-template>

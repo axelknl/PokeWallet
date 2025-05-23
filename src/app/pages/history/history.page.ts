@@ -1,4 +1,4 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
@@ -19,7 +19,8 @@ import {
   IonRefresher,
   IonRefresherContent,
   IonSelect,
-  IonSelectOption
+  IonSelectOption,
+  IonSpinner
 } from '@ionic/angular/standalone';
 import { addIcons } from 'ionicons';
 import { 
@@ -34,18 +35,16 @@ import {
   trendingUpOutline,
   trendingDownOutline,
   trashOutline,
-  searchOutline
+  searchOutline,
+  alertCircleOutline
 } from 'ionicons/icons';
 import { AppHeaderComponent } from '../../components/app-header/app-header.component';
-import { HistoryService, TimePeriod } from '../../services/history.service';
+import { HistoryService } from '../../services/history.service';
 import { HistoryItem, HistoryActionType } from '../../interfaces/history-item.interface';
 import { Router } from '@angular/router';
 import { formatDate } from '@angular/common';
-
-interface PeriodOption {
-  value: TimePeriod;
-  label: string;
-}
+import { UserService } from '../../services/user.service';
+import { Subscription } from 'rxjs';
 
 @Component({
   selector: 'app-history',
@@ -73,25 +72,19 @@ interface PeriodOption {
     IonRefresherContent,
     IonSelect,
     IonSelectOption,
+    IonSpinner,
     AppHeaderComponent
   ]
 })
-export class HistoryPage implements OnInit {
+export class HistoryPage implements OnInit, OnDestroy {
   historyItems: HistoryItem[] = [];
-  loading = true;
-  selectedPeriod: TimePeriod = '1week';
-  
-  periodOptions: PeriodOption[] = [
-    { value: '1week', label: '1 semaine' },
-    { value: '1month', label: '1 mois' },
-    { value: '3months', label: '3 mois' },
-    { value: '6months', label: '6 mois' },
-    { value: '1year', label: '1 an' },
-    { value: '2years', label: '2 ans' }
-  ];
+  loading = false;
+  hasError = false;
+  private subscriptions: Subscription[] = [];
   
   constructor(
     private historyService: HistoryService,
+    private userService: UserService,
     private router: Router
   ) {
     addIcons({ 
@@ -106,37 +99,47 @@ export class HistoryPage implements OnInit {
       trendingUpOutline,
       trendingDownOutline,
       trashOutline,
-      searchOutline
+      searchOutline,
+      alertCircleOutline
     });
   }
 
   ngOnInit() {
-    this.loadHistoryWithPeriod();
+    // S'abonner à l'état de chargement
+    this.subscriptions.push(
+      this.historyService.isLoading$.subscribe(
+        loading => this.loading = loading
+      )
+    );
+
+    // S'abonner aux erreurs
+    this.subscriptions.push(
+      this.historyService.hasError$.subscribe(
+        hasError => this.hasError = hasError
+      )
+    );
+
+    // S'abonner aux données
+    this.subscriptions.push(
+      this.historyService.data$.subscribe(
+        items => this.historyItems = items || []
+      )
+    );
+
+    // Charger les données initiales
+    this.loadHistory();
   }
 
-  async loadHistoryWithPeriod() {
-    this.loading = true;
-    
-    try {
-      await this.historyService.loadUserHistoryWithPeriod(this.selectedPeriod);
-      this.historyService.historyItems$.subscribe(items => {
-        this.historyItems = items;
-        this.loading = false;
-      });
-    } catch (error) {
-      console.error('Erreur lors du chargement de l\'historique:', error);
-      this.loading = false;
-    }
+  ngOnDestroy() {
+    // Se désabonner de tous les observables
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
-  
-  // Charger l'historique avec la période sélectionnée
-  searchWithPeriod() {
-    this.loadHistoryWithPeriod();
-  }
-  
+
   async loadHistory() {
-    // Utiliser la nouvelle méthode de chargement par période (par défaut 1 semaine)
-    await this.loadHistoryWithPeriod();
+    const user = this.userService.getCurrentUser();
+    if (user) {
+      await this.historyService.getData(user.id);
+    }
   }
   
   // Formater les dates
@@ -178,7 +181,7 @@ export class HistoryPage implements OnInit {
   
   // Tirer vers le bas pour rafraîchir
   async handleRefresh(event: any) {
-    await this.loadHistoryWithPeriod();
+    await this.historyService.reloadData();
     event.target.complete();
   }
 } 

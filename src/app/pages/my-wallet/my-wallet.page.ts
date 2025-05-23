@@ -134,9 +134,9 @@ export class MyWalletPage implements OnInit, OnDestroy {
         case 'name-desc':
           return b.name.localeCompare(a.name);
         case 'price-asc':
-          return a.price - b.price;
+          return (a.price || 0) - (b.price || 0);
         case 'price-desc':
-          return b.price - a.price;
+          return (b.price || 0) - (a.price || 0);
         case 'date-asc':
           return new Date(a.addedDate).getTime() - new Date(b.addedDate).getTime();
         case 'date-desc':

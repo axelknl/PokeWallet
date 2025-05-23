@@ -208,4 +208,75 @@ private userCards = signal<PokemonCard[] | null>(null);
 Angular 18 a amélioré le système d'injection de dépendances avec une syntaxe plus légère qui peut être utilisée dans notre implementation pour injecter les services nécessaires.
 
 ### OnPush Change Detection
-La détection de changement OnPush, particulièrement efficace avec les patterns d'immutabilité que nous utilisons dans notre stratégie de cache, peut améliorer davantage les performances des composants qui consomment les données en cache. 
+La détection de changement OnPush, particulièrement efficace avec les patterns d'immutabilité que nous utilisons dans notre stratégie de cache, peut améliorer davantage les performances des composants qui consomment les données en cache.
+
+### Spécifications du Cache pour HistoryService
+
+#### Objectifs
+- Réduire les appels à Firestore pour l'historique des actions
+- Améliorer la réactivité de l'interface utilisateur
+- Assurer la cohérence des données entre les différentes vues
+
+#### Stratégie de Cache
+1. **Initialisation**
+   - Chargement initial depuis Firestore lors du premier accès
+   - Stockage dans un BehaviorSubject pour la réactivité
+   - Tri par date décroissante pour un affichage optimal
+
+2. **Mise à jour du Cache**
+   - Mise à jour optimiste lors des opérations (ajout, vente, suppression)
+   - Validation asynchrone avec Firestore
+   - Restauration de l'état précédent en cas d'erreur
+
+3. **Invalidation du Cache**
+   - Lors de la déconnexion de l'utilisateur
+   - Lors du changement d'utilisateur
+   - Sur demande explicite via reloadData()
+
+4. **Gestion des Erreurs**
+   - Suivi de l'état de chargement via isLoading$
+   - Suivi des erreurs via hasError$
+   - Mécanismes de repli en cas d'échec de chargement
+
+#### Métriques de Performance
+- Temps de chargement initial < 2 secondes
+- Temps de réponse pour les opérations < 100ms
+- Réduction des appels Firestore > 70% 
+
+### Spécifications du Cache pour CollectionHistoryService
+
+#### Objectifs
+- Réduire les appels à Firestore pour l'historique des valeurs de collection
+- Améliorer les performances d'affichage des graphiques
+- Assurer la cohérence des données d'historique entre les vues
+
+#### Stratégie de Cache
+1. **Initialisation**
+   - Chargement initial depuis Firestore lors du premier accès
+   - Stockage dans un BehaviorSubject pour la réactivité
+   - Tri par date croissante pour un affichage chronologique
+
+2. **Mise à jour du Cache**
+   - Rechargement complet après ajout/modification d'entrées
+   - Gestion des doublons par date (une seule entrée par jour)
+   - Validation asynchrone avec Firestore
+
+3. **Invalidation du Cache**
+   - Lors de la déconnexion de l'utilisateur
+   - Lors du changement d'utilisateur
+   - Sur demande explicite via reloadData()
+
+4. **Gestion des Entrées**
+   - Détection automatique des entrées existantes pour une date
+   - Mise à jour ou création selon le contexte
+   - Initialisation automatique si aucun historique n'existe
+
+#### Métriques Attendues
+- **Réduction des appels Firebase**: 85% pour les consultations de graphiques
+- **Temps de génération des graphiques**: < 50ms depuis le cache
+- **Cohérence des données**: 100% entre les différentes vues
+
+#### Points d'Attention
+- Gestion des fuseaux horaires pour les dates
+- Performance lors du rechargement complet du cache
+- Synchronisation avec les mises à jour de la collection

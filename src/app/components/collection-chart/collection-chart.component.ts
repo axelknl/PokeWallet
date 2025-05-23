@@ -37,7 +37,7 @@ export class CollectionChartComponent implements OnInit, OnDestroy {
     // S'abonner aux changements d'historique
     this.historySubscription = this.historyService.history$.subscribe(history => {
       // Actualiser le graphique si des données sont disponibles
-      if (history.length > 0) {
+      if (history && history.length > 0) {
         this.initOrUpdateChart();
       }
     });

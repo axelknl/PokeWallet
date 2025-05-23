@@ -66,17 +66,17 @@
 
 ### Phase 3: Extension à d'autres Services
 
-**Tâche 3.1: Mise en cache du UserService**
+**Tâche 3.1: Mise en cache du UserService** ✅
 - Appliquer le pattern BehaviorSubject au UserService
 - Implémenter la récupération, mise à jour et réinitialisation du cache
 - Intégrer la gestion des erreurs
 
-**Tâche 3.2: Mise en cache du HistoryService**
+**Tâche 3.2: Mise en cache du HistoryService** ✅
 - Appliquer le pattern BehaviorSubject au HistoryService
 - Implémenter les méthodes de cache spécifiques à l'historique
 - Intégrer la gestion des erreurs
 
-**Tâche 3.3: Mise en cache du CollectionHistoryService**
+**Tâche 3.3: Mise en cache du CollectionHistoryService** ✅
 - Appliquer le pattern BehaviorSubject pour l'historique de la collection
 - Implémenter la récupération et mise à jour du cache
 - Intégrer la gestion des erreurs

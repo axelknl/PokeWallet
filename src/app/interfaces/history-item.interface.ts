@@ -5,6 +5,15 @@ export enum HistoryActionType {
   SUPPRESSION = 'suppression'
 }
 
+export type HistoryAction = 'ADD_CARD' | 'REMOVE_CARD' | 'UPDATE_CARD' | 'SELL_CARD';
+
+export interface HistoryItemDetails {
+  price?: number;
+  condition?: string;
+  oldValue?: any;
+  newValue?: any;
+}
+
 export interface HistoryItem {
   id: string;
   userId: string;
@@ -17,5 +26,5 @@ export interface HistoryItem {
   purchasePrice?: number;
   saleDate?: Date;
   salePrice?: number;
-  profit?: number; // Gain ou perte (salePrice - purchasePrice)
+  profit?: number;
 } 

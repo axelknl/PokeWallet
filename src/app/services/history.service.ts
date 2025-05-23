@@ -1,135 +1,56 @@
 import { Injectable } from '@angular/core';
-import { 
-  Firestore, 
-  collection, 
-  addDoc, 
-  query, 
-  where, 
-  orderBy, 
-  getDocs,
-  Timestamp 
-} from '@angular/fire/firestore';
-import { BehaviorSubject, Observable } from 'rxjs';
+import { Auth } from '@angular/fire/auth';
+import { Firestore, collection, query, where, orderBy, getDocs, addDoc, Timestamp } from '@angular/fire/firestore';
+import { BaseCacheService } from './base-cache.service';
 import { HistoryItem, HistoryActionType } from '../interfaces/history-item.interface';
-import { UserService } from './user.service';
 import { PokemonCard } from '../interfaces/pokemon-card.interface';
-
-export type TimePeriod = '1week' | '1month' | '3months' | '6months' | '1year' | '2years';
 
 @Injectable({
   providedIn: 'root'
 })
-export class HistoryService {
-  private historyItemsSubject = new BehaviorSubject<HistoryItem[]>([]);
-  public historyItems$ = this.historyItemsSubject.asObservable();
-  private loading = false;
-
+export class HistoryService extends BaseCacheService<HistoryItem[]> {
   constructor(
-    private firestore: Firestore,
-    private userService: UserService
-  ) { }
+    private auth: Auth,
+    private firestore: Firestore
+  ) {
+    super();
+  }
 
-  // Récupérer l'historique d'un utilisateur avec une période spécifique
-  async loadUserHistoryWithPeriod(period: TimePeriod = '1week'): Promise<void> {
-    if (this.loading) return;
-    
-    this.loading = true;
-    
+  protected async fetchFromSource(userId: string): Promise<HistoryItem[]> {
     try {
-      const currentUser = this.userService.getCurrentUser();
-      if (!currentUser) {
-        this.historyItemsSubject.next([]);
-        this.loading = false;
-        return;
-      }
-
-      const startDate = this.getStartDateForPeriod(period);
-      const userId = currentUser.id;
-      const historyCollection = collection(this.firestore, 'history');
-      
-      const historyQuery = query(
-        historyCollection,
+      const historyRef = collection(this.firestore, 'history');
+      const q = query(
+        historyRef,
         where('userId', '==', userId),
-        where('date', '>=', startDate.toISOString()),
         orderBy('date', 'desc')
       );
-      
-      const snapshot = await getDocs(historyQuery);
-      
-      const historyItems = snapshot.docs.map(doc => {
-        const data = doc.data() as any;
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => {
+        const data = doc.data();
         return {
           id: doc.id,
-          userId: data.userId,
-          date: data.date instanceof Timestamp ? data.date.toDate() : new Date(data.date),
-          actionType: data.actionType as HistoryActionType,
-          cardName: data.cardName,
-          cardId: data.cardId,
-          cardImageUrl: data.cardImageUrl,
-          purchaseDate: data.purchaseDate ? 
-            (data.purchaseDate instanceof Timestamp ? 
-              data.purchaseDate.toDate() : new Date(data.purchaseDate)) : undefined,
-          saleDate: data.saleDate ? 
-            (data.saleDate instanceof Timestamp ? 
-              data.saleDate.toDate() : new Date(data.saleDate)) : undefined,
-          purchasePrice: data.purchasePrice,
-          salePrice: data.salePrice,
-          profit: data.profit
+          ...data,
+          date: data['date'] instanceof Timestamp ? data['date'].toDate() : new Date(data['date']),
+          purchaseDate: data['purchaseDate'] ? 
+            (data['purchaseDate'] instanceof Timestamp ? 
+              data['purchaseDate'].toDate() : new Date(data['purchaseDate'])) : undefined,
+          saleDate: data['saleDate'] ? 
+            (data['saleDate'] instanceof Timestamp ? 
+              data['saleDate'].toDate() : new Date(data['saleDate'])) : undefined
         } as HistoryItem;
       });
-      
-      this.historyItemsSubject.next(historyItems);
     } catch (error) {
-      console.error('Erreur lors du chargement de l\'historique:', error);
-    } finally {
-      this.loading = false;
+      console.error('Erreur lors de la récupération de l\'historique:', error);
+      throw error;
     }
   }
 
-  // Récupérer la date de début pour une période donnée
-  private getStartDateForPeriod(period: TimePeriod): Date {
-    const now = new Date();
-    const startDate = new Date(now);
-    
-    switch(period) {
-      case '1week':
-        startDate.setDate(now.getDate() - 7);
-        break;
-      case '1month':
-        startDate.setMonth(now.getMonth() - 1);
-        break;
-      case '3months':
-        startDate.setMonth(now.getMonth() - 3);
-        break;
-      case '6months':
-        startDate.setMonth(now.getMonth() - 6);
-        break;
-      case '1year':
-        startDate.setFullYear(now.getFullYear() - 1);
-        break;
-      case '2years':
-        startDate.setFullYear(now.getFullYear() - 2);
-        break;
-      default:
-        startDate.setDate(now.getDate() - 7); // Par défaut: 1 semaine
-    }
-    
-    return startDate;
-  }
-
-  // Récupérer l'historique d'un utilisateur
-  async loadUserHistory(): Promise<void> {
-    // Par défaut, charger 1 semaine d'historique
-    await this.loadUserHistoryWithPeriod('1week');
-  }
-
-  // Ajouter un élément à l'historique lors de l'ajout d'une carte
   async addHistoryEntry(card: PokemonCard): Promise<void> {
     try {
-      const currentUser = this.userService.getCurrentUser();
+      const currentUser = this.auth.currentUser;
       if (!currentUser) return;
 
-      const userId = currentUser.id;
+      const userId = currentUser.uid;
       
       // Déterminer le type d'action
       const actionType = (card.purchaseDate || card.purchasePrice) ? 
@@ -148,32 +69,24 @@ export class HistoryService {
         purchasePrice: card.purchasePrice
       };
       
-      // Ajouter à Firestore
-      const historyCollection = collection(this.firestore, 'history');
-      await addDoc(historyCollection, {
-        ...historyItem,
-        date: historyItem.date.toISOString(),
-        purchaseDate: historyItem.purchaseDate ? historyItem.purchaseDate.toISOString() : null
-      });
+      await this.addToFirestore(historyItem);
       
-      // Mettre à jour le BehaviorSubject
-      const currentItems = this.historyItemsSubject.getValue();
-      this.historyItemsSubject.next([
-        { ...historyItem, id: 'temp-id' } as HistoryItem, 
-        ...currentItems
-      ]);
+      // Mettre à jour le cache
+      const currentData = this.dataSubject.value || [];
+      const updatedData = [{ ...historyItem, id: 'temp-id' } as HistoryItem, ...currentData];
+      this.dataSubject.next(updatedData);
     } catch (error) {
       console.error('Erreur lors de l\'ajout à l\'historique:', error);
+      throw error;
     }
   }
 
-  // Ajouter un élément à l'historique lors de la vente d'une carte
   async addSaleHistoryEntry(card: PokemonCard, salePrice: number, saleDate?: Date): Promise<void> {
     try {
-      const currentUser = this.userService.getCurrentUser();
+      const currentUser = this.auth.currentUser;
       if (!currentUser) return;
 
-      const userId = currentUser.id;
+      const userId = currentUser.uid;
       const actionDate = new Date();
       const saleDateObj = saleDate || actionDate;
       
@@ -182,9 +95,6 @@ export class HistoryService {
       if (card.purchasePrice !== undefined) {
         profit = salePrice - card.purchasePrice;
       }
-      console.log(card.purchasePrice);
-      console.log(salePrice);
-      console.log(profit);
       
       // Créer l'entrée d'historique
       const historyItem: Omit<HistoryItem, 'id'> = {
@@ -201,33 +111,24 @@ export class HistoryService {
         profit: profit
       };
       
-      // Ajouter à Firestore
-      const historyCollection = collection(this.firestore, 'history');
-      await addDoc(historyCollection, {
-        ...historyItem,
-        date: historyItem.date.toISOString(),
-        purchaseDate: historyItem.purchaseDate ? historyItem.purchaseDate.toISOString() : null,
-        saleDate: saleDateObj.toISOString()
-      });
+      await this.addToFirestore(historyItem);
       
-      // Mettre à jour le BehaviorSubject
-      const currentItems = this.historyItemsSubject.getValue();
-      this.historyItemsSubject.next([
-        { ...historyItem, id: 'temp-id' } as HistoryItem, 
-        ...currentItems
-      ]);
+      // Mettre à jour le cache
+      const currentData = this.dataSubject.value || [];
+      const updatedData = [{ ...historyItem, id: 'temp-id' } as HistoryItem, ...currentData];
+      this.dataSubject.next(updatedData);
     } catch (error) {
       console.error('Erreur lors de l\'ajout de la vente à l\'historique:', error);
+      throw error;
     }
   }
-  
-  // Ajouter un élément à l'historique lors de la suppression d'une carte
+
   async addDeleteHistoryEntry(card: PokemonCard): Promise<void> {
     try {
-      const currentUser = this.userService.getCurrentUser();
+      const currentUser = this.auth.currentUser;
       if (!currentUser) return;
 
-      const userId = currentUser.id;
+      const userId = currentUser.uid;
       
       // Créer l'entrée d'historique
       const historyItem: Omit<HistoryItem, 'id'> = {
@@ -241,22 +142,25 @@ export class HistoryService {
         purchasePrice: card.purchasePrice
       };
       
-      // Ajouter à Firestore
-      const historyCollection = collection(this.firestore, 'history');
-      await addDoc(historyCollection, {
-        ...historyItem,
-        date: historyItem.date.toISOString(),
-        purchaseDate: historyItem.purchaseDate ? historyItem.purchaseDate.toISOString() : null
-      });
+      await this.addToFirestore(historyItem);
       
-      // Mettre à jour le BehaviorSubject
-      const currentItems = this.historyItemsSubject.getValue();
-      this.historyItemsSubject.next([
-        { ...historyItem, id: 'temp-id' } as HistoryItem, 
-        ...currentItems
-      ]);
+      // Mettre à jour le cache
+      const currentData = this.dataSubject.value || [];
+      const updatedData = [{ ...historyItem, id: 'temp-id' } as HistoryItem, ...currentData];
+      this.dataSubject.next(updatedData);
     } catch (error) {
       console.error('Erreur lors de l\'ajout de la suppression à l\'historique:', error);
+      throw error;
     }
+  }
+
+  private async addToFirestore(item: Omit<HistoryItem, 'id'>): Promise<void> {
+    const historyRef = collection(this.firestore, 'history');
+    await addDoc(historyRef, {
+      ...item,
+      date: item.date.toISOString(),
+      purchaseDate: item.purchaseDate ? item.purchaseDate.toISOString() : null,
+      saleDate: item.saleDate ? item.saleDate.toISOString() : null
+    });
   }
 } 

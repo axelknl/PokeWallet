@@ -145,7 +145,7 @@ export class AddCardPage implements OnInit {
       const card = await this.cardStorageService.getCardById(cardId);
       if (card) {
         this.cardName = card.name;
-        this.cardPrice = card.price;
+        this.cardPrice = card.price || 0;
         this.imageUrl = card.imageUrl;
         this.purchaseDate = card.purchaseDate ? card.purchaseDate.toISOString() : undefined;
         this.purchasePrice = card.purchasePrice;

@@ -64,10 +64,17 @@ export class HomePage implements OnInit, OnDestroy {
         this.hasCards = cards.length > 0;
         if (cards.length > 0) {
           this.recentCards = cards.slice(0, 3);
-          this.mostExpensiveCard = cards.reduce(
-            (max: PokemonCard, card: PokemonCard) => card.price > max.price ? card : max, 
-            cards[0]
-          );
+          // Filtrer les cartes qui ont un prix défini
+          const cardsWithPrice = cards.filter(card => card.price !== undefined);
+          if (cardsWithPrice.length > 0) {
+            this.mostExpensiveCard = cardsWithPrice.reduce(
+              (max: PokemonCard, card: PokemonCard) => 
+                (card.price ?? 0) > (max.price ?? 0) ? card : max,
+              cardsWithPrice[0]
+            );
+          } else {
+            this.mostExpensiveCard = cards[0];
+          }
         } else {
           this.recentCards = [];
           this.mostExpensiveCard = null;
