@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { 
   IonHeader, 
   IonToolbar, 
@@ -43,6 +43,7 @@ import { SearchBarComponent } from '../../components/search-bar/search-bar.compo
   templateUrl: './my-wallet.page.html',
   styleUrls: ['./my-wallet.page.scss'],
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -85,16 +86,19 @@ export class MyWalletPage implements OnInit, OnDestroy {
     private cardStorage: CardStorageService,
     private userService: UserService,
     private modalController: ModalController,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     addIcons({ filter, arrowUp, arrowDown, add, ellipsisVertical });
   }
 
   ngOnInit() {
-    // S'abonner aux changements des cartes
+    // S'abonner aux changements des cartes avec optimisation OnPush
     this.cardsSubscription = this.cardStorage.cards$.subscribe(cards => {
       this.cards = cards || [];
       this.applyFilters();
+      // Déclencher manuellement la détection de changement avec OnPush
+      this.cdr.markForCheck();
     });
   }
 
@@ -102,6 +106,7 @@ export class MyWalletPage implements OnInit, OnDestroy {
     // Se désabonner pour éviter les fuites de mémoire
     if (this.cardsSubscription) {
       this.cardsSubscription.unsubscribe();
+      this.cardsSubscription = null;
     }
   }
 

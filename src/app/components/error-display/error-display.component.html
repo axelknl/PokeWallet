@@ -1,0 +1,35 @@
+<ion-card 
+  *ngIf="showError && error" 
+  class="error-container"
+  [ngClass]="getSeverityClass()">
+  
+  <ion-card-header>
+    <ion-card-title>
+      <ion-icon [name]="getErrorIcon()" slot="start"></ion-icon>
+      Erreur
+      <ion-button 
+        fill="clear" 
+        size="small" 
+        slot="end" 
+        class="close-button"
+        (click)="onDismiss()">
+        <ion-icon name="close"></ion-icon>
+      </ion-button>
+    </ion-card-title>
+  </ion-card-header>
+  
+  <ion-card-content>
+    <p class="error-message">{{ error.userMessage }}</p>
+    
+    <div class="error-actions" *ngIf="error.retryable">
+      <ion-button 
+        color="primary" 
+        size="small" 
+        class="retry-button"
+        (click)="onRetryClick()">
+        <ion-icon name="refresh" slot="start"></ion-icon>
+        Réessayer
+      </ion-button>
+    </div>
+  </ion-card-content>
+</ion-card> 

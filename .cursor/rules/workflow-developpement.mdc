@@ -36,4 +36,8 @@ Les commandes principales sont définies dans [package.json](mdc:package.json) :
 2. Séparer la logique métier dans les services
 3. Utiliser les composants réutilisables pour l'interface
 4. Suivre la structure de routage établie pour ajouter de nouvelles pages
+5. Toujours implémenter des test et vérifier leur bon fonctionnement (utiliser --watch=false)
+6. Utiliser la méthode TDD (Red, Green, Refacto)
+7. Toujous utiliser la langue française pour les commentaires, les descriptions de test et la documentation
+8. Les test doivent être implémentés les un à la suite et leur bon fonctionnement doit être vérifié avant de passer au prochain.
 

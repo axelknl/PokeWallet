@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { 
@@ -51,6 +51,7 @@ import { Subscription } from 'rxjs';
   templateUrl: './history.page.html',
   styleUrls: ['./history.page.scss'],
   standalone: true,
+  changeDetection: ChangeDetectionStrategy.OnPush,
   imports: [
     CommonModule,
     FormsModule,
@@ -85,7 +86,8 @@ export class HistoryPage implements OnInit, OnDestroy {
   constructor(
     private historyService: HistoryService,
     private userService: UserService,
-    private router: Router
+    private router: Router,
+    private cdr: ChangeDetectorRef
   ) {
     addIcons({ 
       calendarOutline, 
@@ -105,24 +107,33 @@ export class HistoryPage implements OnInit, OnDestroy {
   }
 
   ngOnInit() {
-    // S'abonner à l'état de chargement
+    // S'abonner à l'état de chargement avec optimisation OnPush
     this.subscriptions.push(
       this.historyService.isLoading$.subscribe(
-        loading => this.loading = loading
+        loading => {
+          this.loading = loading;
+          this.cdr.markForCheck();
+        }
       )
     );
 
-    // S'abonner aux erreurs
+    // S'abonner aux erreurs avec optimisation OnPush
     this.subscriptions.push(
       this.historyService.hasError$.subscribe(
-        hasError => this.hasError = hasError
+        hasError => {
+          this.hasError = hasError;
+          this.cdr.markForCheck();
+        }
       )
     );
 
-    // S'abonner aux données
+    // S'abonner aux données avec optimisation OnPush
     this.subscriptions.push(
       this.historyService.data$.subscribe(
-        items => this.historyItems = items || []
+        items => {
+          this.historyItems = items || [];
+          this.cdr.markForCheck();
+        }
       )
     );
 
@@ -131,8 +142,13 @@ export class HistoryPage implements OnInit, OnDestroy {
   }
 
   ngOnDestroy() {
-    // Se désabonner de tous les observables
-    this.subscriptions.forEach(sub => sub.unsubscribe());
+    // Se désabonner de tous les observables pour éviter les fuites de mémoire
+    this.subscriptions.forEach(sub => {
+      if (sub && !sub.closed) {
+        sub.unsubscribe();
+      }
+    });
+    this.subscriptions = [];
   }
 
   async loadHistory() {

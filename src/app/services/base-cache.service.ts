@@ -1,8 +1,8 @@
-import { BehaviorSubject, Observable } from 'rxjs';
+import { BehaviorSubject, Observable, shareReplay, distinctUntilChanged } from 'rxjs';
 import { CacheableService } from '../interfaces/cacheable-service.interface';
 
 /**
- * Classe de base abstraite pour implémenter le pattern de cache
+ * Classe de base abstraite pour implémenter le pattern de cache avec optimisations de performance
  * @template T Type des données à mettre en cache
  */
 export abstract class BaseCacheService<T> implements CacheableService<T> {
@@ -32,19 +32,33 @@ export abstract class BaseCacheService<T> implements CacheableService<T> {
   protected initialized = false;
 
   /**
-   * Observable publique des données en cache
+   * Promise pour éviter les appels multiples simultanés
    */
-  public data$ = this.dataSubject.asObservable();
+  private loadingPromise: Promise<void> | null = null;
+
+  /**
+   * Observable publique des données en cache avec optimisations
+   */
+  public data$ = this.dataSubject.asObservable().pipe(
+    distinctUntilChanged(),
+    shareReplay(1)
+  );
   
   /**
-   * Observable publique de l'état de chargement
+   * Observable publique de l'état de chargement avec optimisations
    */
-  public isLoading$ = this.loadingSubject.asObservable();
+  public isLoading$ = this.loadingSubject.asObservable().pipe(
+    distinctUntilChanged(),
+    shareReplay(1)
+  );
   
   /**
-   * Observable publique de l'état d'erreur
+   * Observable publique de l'état d'erreur avec optimisations
    */
-  public hasError$ = this.errorSubject.asObservable();
+  public hasError$ = this.errorSubject.asObservable().pipe(
+    distinctUntilChanged(),
+    shareReplay(1)
+  );
 
   /**
    * Méthode abstraite à implémenter pour charger les données depuis la source
@@ -55,6 +69,7 @@ export abstract class BaseCacheService<T> implements CacheableService<T> {
 
   /**
    * Récupère les données, en utilisant le cache si disponible
+   * Optimisé pour éviter les appels multiples simultanés
    * @param userId ID de l'utilisateur
    * @returns Observable émettant les données depuis le cache ou la source
    */
@@ -67,13 +82,19 @@ export abstract class BaseCacheService<T> implements CacheableService<T> {
       return this.data$;
     }
     
-    // Sinon, charger les données depuis la source
-    this.loadData(targetUserId);
+    // Si un chargement est déjà en cours, attendre qu'il se termine
+    if (!this.loadingPromise) {
+      this.loadingPromise = this.loadData(targetUserId).finally(() => {
+        this.loadingPromise = null;
+      });
+    }
+    
     return this.data$;
   }
   
   /**
    * Charge les données depuis la source et les met en cache
+   * Optimisé pour éviter les appels multiples
    * @param userId ID de l'utilisateur
    * @returns Promise résolue quand les données sont chargées
    */
@@ -105,6 +126,7 @@ export abstract class BaseCacheService<T> implements CacheableService<T> {
   
   /**
    * Force le rechargement des données depuis la source
+   * Optimisé pour éviter les appels multiples simultanés
    * @returns Promise résolue quand les données sont rechargées
    */
   public async reloadData(): Promise<void> {
@@ -113,12 +135,20 @@ export abstract class BaseCacheService<T> implements CacheableService<T> {
       return;
     }
     
+    // Attendre que tout chargement en cours se termine
+    if (this.loadingPromise) {
+      await this.loadingPromise;
+    }
+    
     // Sauvegarde l'état actuel du cache en cas d'erreur
     const previousData = this.dataSubject.getValue();
     const wasInitialized = this.initialized;
     
     try {
-      return await this.loadData(this.cachedUserId);
+      this.loadingPromise = this.loadData(this.cachedUserId).finally(() => {
+        this.loadingPromise = null;
+      });
+      return await this.loadingPromise;
     } catch (error) {
       // Restaurer l'état précédent en cas d'erreur
       if (wasInitialized) {
@@ -130,13 +160,14 @@ export abstract class BaseCacheService<T> implements CacheableService<T> {
   }
   
   /**
-   * Vide le cache
+   * Vide le cache et nettoie les ressources
    */
   public clearCache(): void {
     this.dataSubject.next(null);
     this.cachedUserId = null;
     this.initialized = false;
     this.errorSubject.next(false);
+    this.loadingPromise = null;
   }
   
   /**

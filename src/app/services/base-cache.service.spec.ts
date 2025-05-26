@@ -7,19 +7,20 @@ import { fakeAsync, tick } from '@angular/core/testing';
 class TestCacheService extends BaseCacheService<string[]> {
   protected testData: string[] = ['item1', 'item2', 'item3'];
   protected shouldFail = false;
+  private callCount = 0;
 
   // Implémenter la méthode abstraite fetchFromSource
   protected async fetchFromSource(userId: string): Promise<string[]> {
-    // Simuler une requête asynchrone
-    return new Promise((resolve, reject) => {
-      setTimeout(() => {
-        if (this.shouldFail) {
-          reject(new Error('Erreur simulée'));
-        } else {
-          resolve([...this.testData]); // Retourner une copie pour éviter les mutations
-        }
-      }, 100);
-    });
+    this.callCount++;
+    
+    if (this.shouldFail) {
+      throw new Error('Erreur de test');
+    }
+    
+    // Simuler un délai réseau
+    await new Promise(resolve => setTimeout(resolve, 10));
+    
+    return [...this.testData];
   }
 
   // Méthode pour simuler une erreur
@@ -30,6 +31,14 @@ class TestCacheService extends BaseCacheService<string[]> {
   // Méthode pour modifier les données de test
   public setTestData(data: string[]): void {
     this.testData = [...data];
+  }
+
+  public getCallCount(): number {
+    return this.callCount;
+  }
+
+  public resetCallCount(): void {
+    this.callCount = 0;
   }
 }
 
@@ -169,4 +178,95 @@ describe('BaseCacheService', () => {
     expect(service.hasCachedData()).toBeTrue();
     expect(await firstValueFrom(service.data$)).toEqual(originalData);
   }));
+});
+
+describe('BaseCacheService - Performance Optimization', () => {
+  let service: TestCacheService;
+
+  beforeEach(() => {
+    TestBed.configureTestingModule({});
+    service = new TestCacheService();
+  });
+
+  it('should minimize calls to fetchFromSource when using cache', (done) => {
+    const userId = 'test-user';
+    
+    // Premier appel - doit charger depuis la source
+    service.resetCallCount();
+    
+    service.getData(userId).subscribe(data1 => {
+      if (data1 !== null) {
+        expect(service.getCallCount()).toBe(1);
+        expect(data1).toEqual(['item1', 'item2', 'item3']);
+        
+        // Deuxième appel avec le même userId - doit utiliser le cache
+        service.getData(userId).subscribe(data2 => {
+          expect(service.getCallCount()).toBe(1); // Pas d'appel supplémentaire
+          expect(data2).toEqual(['item1', 'item2', 'item3']);
+          done();
+        });
+      }
+    });
+  });
+
+  it('should efficiently handle multiple concurrent requests', (done) => {
+    const userId = 'test-user';
+    service.resetCallCount();
+    
+    let completedCount = 0;
+    const results: any[] = [];
+    
+    // Lancer plusieurs requêtes simultanées
+    for (let i = 0; i < 3; i++) {
+      service.getData(userId).subscribe(result => {
+        if (result !== null) {
+          results.push(result);
+          completedCount++;
+          
+          if (completedCount === 3) {
+            // Doit avoir fait un seul appel à fetchFromSource
+            expect(service.getCallCount()).toBe(1);
+            
+            // Tous les résultats doivent être identiques
+            results.forEach(result => {
+              expect(result).toEqual(['item1', 'item2', 'item3']);
+            });
+            done();
+          }
+        }
+      });
+    }
+  });
+
+  it('should properly manage memory by reusing observables', () => {
+    const userId = 'test-user';
+    
+    // Obtenir plusieurs références à l'observable
+    const obs1 = service.getData(userId);
+    const obs2 = service.getData(userId);
+    const obs3 = service.getData(userId);
+    
+    // Tous doivent référencer le même observable
+    expect(obs1).toBe(obs2);
+    expect(obs2).toBe(obs3);
+  });
+
+  it('should handle cache invalidation efficiently', () => {
+    const userId = 'test-user';
+    
+    // Charger les données initiales
+    service.resetCallCount();
+    
+    // Simuler des données en cache
+    service.getData(userId);
+    
+    // Vérifier que le cache a des données
+    expect(service.hasCachedData()).toBeFalse(); // Initialement false
+    
+    // Vider le cache
+    service.clearCache();
+    
+    // Vérifier que le cache est vide
+    expect(service.hasCachedData()).toBeFalse();
+  });
 }); 

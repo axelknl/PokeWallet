@@ -44,6 +44,59 @@ L'implémentation complète de cette stratégie apportera les avantages suivants
 - **Expérience utilisateur fluide :** Les données modifiées seront immédiatement visibles dans toutes les vues, sans rechargement complet.
 - **Robustesse :** Mise en place de mécanismes de gestion des erreurs et de fallback pour assurer la fiabilité.
 
+### Système de Gestion d'Erreurs Intégré
+
+**📚 Documentation complète : [Gestion d'Erreurs Standardisée](../error-handling.md)**
+
+Le système de cache est complété par un système de gestion d'erreurs standardisée développé avec la méthodologie TDD :
+
+#### Fonctionnalités du Système d'Erreurs
+
+- **ErrorHandlingService** : Classification automatique des erreurs (NETWORK, FIREBASE, AUTHENTICATION, CACHE, etc.)
+- **ErrorDisplayComponent** : Interface utilisateur cohérente pour l'affichage d'erreurs
+- **Récupération automatique** : Système de retry pour erreurs temporaires
+- **Messages conviviaux** : Traduction des erreurs techniques en messages utilisateur français
+
+#### Intégration avec le Cache
+
+```typescript
+// Dans BaseCacheService - gestion d'erreurs lors du chargement
+protected async loadData(userId: string): Promise<void> {
+  try {
+    this.loadingSubject.next(true);
+    this.errorSubject.next(false);
+    
+    const data = await this.fetchFromSource(userId);
+    this.dataSubject.next(data);
+    this.cachedUserId = userId;
+    this.initialized = true;
+  } catch (error) {
+    // Utilisation du système d'erreurs standardisé
+    const standardError = this.errorHandler.handleError(error, {
+      operation: 'loadData',
+      userId,
+      service: this.constructor.name
+    });
+    
+    this.errorSubject.next(true);
+    console.error('Erreur lors du chargement des données:', standardError);
+    
+    // Conservation des données existantes si disponibles
+    if (!this.initialized) {
+      this.dataSubject.next(null);
+    }
+  } finally {
+    this.loadingSubject.next(false);
+  }
+}
+```
+
+#### Tests du Système d'Erreurs
+
+- **22 tests total** : 9 service + 7 composant + 6 intégration
+- **Couverture TDD** : Red-Green-Refactor appliqué
+- **Validation d'intégration** : Tests avec les services de cache existants
+
 ## Documentation Technique
 
 ### État Actuel (Avant Optimisation)
